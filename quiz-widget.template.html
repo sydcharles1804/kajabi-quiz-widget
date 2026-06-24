@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scholarship Readiness Quiz</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f4f6fb;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    /* ── Widget shell ─────────────────────────────────────── */
+    .widget {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 6px 32px rgba(0,0,0,0.09);
+      width: 100%;
+      max-width: 580px;
+      overflow: hidden;
+    }
+
+    /* ── Progress header ──────────────────────────────────── */
+    .progress-header {
+      padding: 22px 28px 0;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: #9aa3b2;
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      height: 5px;
+      background: #eef0f5;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3a6fdf, #6a9fff);
+      border-radius: 3px;
+      transition: width 0.4s cubic-bezier(.4,0,.2,1);
+      will-change: width;
+    }
+
+    /* ── Question body ────────────────────────────────────── */
+    .question-body {
+      padding: 26px 28px 28px;
+    }
+
+    .section-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #3a6fdf;
+      background: #eef2ff;
+      border-radius: 20px;
+      padding: 4px 10px;
+      margin-bottom: 14px;
+    }
+
+    .question-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: #12192e;
+      line-height: 1.45;
+      margin-bottom: 22px;
+    }
+
+    /* ── Options ──────────────────────────────────────────── */
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-bottom: 24px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 15px;
+      border: 2px solid #e4e8f0;
+      border-radius: 11px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+
+    .option:hover {
+      border-color: #3a6fdf;
+      background: #f0f4ff;
+      transform: translateX(2px);
+    }
+
+    .option.selected {
+      border-color: #3a6fdf;
+      background: #eef2ff;
+    }
+
+    .option-letter {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #eef0f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #7a85a0;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .option.selected .option-letter {
+      background: #3a6fdf;
+      color: #fff;
+    }
+
+    .option-text {
+      font-size: 14px;
+      color: #2c3550;
+      line-height: 1.4;
+    }
+
+    /* ── Primary button ───────────────────────────────────── */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: #3a6fdf;
+      color: #fff;
+      border: none;
+      border-radius: 11px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s, transform 0.1s;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #2a5bc9;
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      background: #c0cef0;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Result screen ────────────────────────────────────── */
+    .result-top {
+      padding: 32px 28px 0;
+      text-align: center;
+    }
+
+    .result-emoji { font-size: 52px; line-height: 1; margin-bottom: 10px; }
+
+    .result-category {
+      font-size: 20px;
+      font-weight: 800;
+      color: #12192e;
+      margin-bottom: 5px;
+    }
+
+    .result-score-line {
+      font-size: 13px;
+      color: #9aa3b2;
+      margin-bottom: 22px;
+    }
+
+    .result-card {
+      margin: 0 28px;
+      background: #f7f9fc;
+      border-radius: 13px;
+      padding: 20px;
+      text-align: left;
+    }
+
+    .result-card p {
+      font-size: 14px;
+      color: #3c4561;
+      line-height: 1.75;
+      margin-bottom: 14px;
+    }
+
+    .result-card p:last-of-type { margin-bottom: 0; }
+
+    .focus-heading {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #3a6fdf;
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+
+    .focus-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .focus-list li {
+      font-size: 13px;
+      color: #3c4561;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .focus-list li::before {
+      content: '→';
+      color: #3a6fdf;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Contact form ─────────────────────────────────────── */
+    .contact-section {
+      padding: 24px 28px 28px;
+    }
+
+    .contact-heading {
+      font-size: 17px;
+      font-weight: 700;
+      color: #12192e;
+      margin-bottom: 4px;
+    }
+
+    .contact-sub {
+      font-size: 13px;
+      color: #9aa3b2;
+      margin-bottom: 18px;
+    }
+
+    .field { margin-bottom: 12px; }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #5a6480;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #e4e8f0;
+      border-radius: 9px;
+      font-size: 14px;
+      color: #12192e;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #fff;
+    }
+
+    .field input:focus { border-color: #3a6fdf; }
+
+    .error-msg {
+      font-size: 12px;
+      color: #e53e3e;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* ── Thank-you screen ─────────────────────────────────── */
+    .thankyou {
+      padding: 56px 28px;
+      text-align: center;
+    }
+
+    .thankyou-icon { font-size: 60px; margin-bottom: 16px; }
+
+    .thankyou h2 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #12192e;
+      margin-bottom: 10px;
+    }
+
+    .thankyou p {
+      font-size: 14px;
+      color: #6b7591;
+      line-height: 1.7;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    /* ── Utility ──────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    .divider {
+      height: 1px;
+      background: #eef0f5;
+      margin: 0 28px;
+    }
+
+    /* ── Mobile ───────────────────────────────────────────── */
+    @media (max-width: 520px) {
+      body { padding: 0; background: #fff; }
+      .widget { border-radius: 0; box-shadow: none; min-height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+<div class="widget" id="widget">
+
+  <!-- ════════════════════════════════════════════════
+       SCREEN A — Questions
+  ════════════════════════════════════════════════ -->
+  <div id="screen-q">
+    <div class="progress-header">
+      <div class="progress-meta">
+        <span id="prog-label">Question 1 of 14</span>
+        <span id="prog-pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="question-body">
+      <div class="section-tag" id="q-section"></div>
+      <div class="question-text" id="q-text"></div>
+      <div class="options" id="q-options"></div>
+      <button class="btn-primary" id="btn-next" disabled onclick="nextQuestion()">Next →</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       SCREEN B — Result + Contact form
+  ════════════════════════════════════════════════ -->
+  <div id="screen-result" class="hidden">
+    <div class="result-top">
+      <div class="result-emoji"   id="r-emoji"></div>
+      <div class="result-category" id="r-category"></div>
+      <div class="result-score-line" id="r-scoreline"></div>
+      <div class="result-card"   id="r-card"></div>
+    </div>
+
+    <div style="padding: 24px 28px 0;">
+      <div class="divider"></div>
+    </div>
+
+    <div class="contact-section">
+      <div class="contact-heading">Get your personalized action plan</div>
+      <div class="contact-sub">Enter your info below and we'll send you tailored next steps.</div>
+
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="inp-name" placeholder="Jane Smith" autocomplete="name" />
+      </div>
+      <div class="field">
+        <label>Email Address</label>
+        <input type="email" id="inp-email" placeholder="jane@example.com" autocomplete="email" />
+      </div>
+
+      <div class="error-msg" id="form-error">Please enter a valid name and email address.</div>
+
+      <button class="btn-primary" id="btn-submit" onclick="submitResult()" style="margin-top:14px">
+        Get My Action Plan →
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       SCREEN C — Thank you
+  ════════════════════════════════════════════════ -->
+  <div id="screen-ty" class="hidden">
+    <div class="thankyou">
+      <div class="thankyou-icon">🎉</div>
+      <h2>You're all set!</h2>
+      <p>
+        We've received your results and will be in touch soon with a
+        personalized scholarship readiness plan for your child.
+      </p>
+    </div>
+  </div>
+
+</div><!-- /.widget -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  Supabase client
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ═══════════════════════════════════════════════════════════
+//  Question bank
+// ═══════════════════════════════════════════════════════════
+const QUESTIONS = [
+  {
+    id: 'grade',
+    isGrade: true,
+    scored: false,
+    section: 'Required First',
+    text: 'What grade is your child currently in?',
+    options: [
+      { label: '7th–8th grade',  value: '7th-8th'  },
+      { label: '9th–10th grade', value: '9th-10th' },
+      { label: '11th grade',     value: '11th'      }
+    ]
+  },
+  // ── 1. STUDIOUS ───────────────────────────────
+  {
+    id: 'q1', scored: true, section: '📚 Studious — Academic Strength',
+    text: 'How would you describe your child\'s academic performance?',
+    options: [
+      { label: 'Mostly A\'s (with occasional B\'s)',        value: 5 },
+      { label: 'Mostly B\'s (with some A\'s)',              value: 4 },
+      { label: 'Mostly B\'s',                               value: 3 },
+      { label: 'B\'s and C\'s',                             value: 2 },
+      { label: 'Struggles academically',                    value: 1 }
+    ]
+  },
+  {
+    id: 'q2', scored: true, section: '📚 Studious — Academic Strength',
+    text: 'Is your child taking the most challenging classes available to them at their current school?',
+    options: [
+      { label: 'Yes—consistently seeks the highest level available', value: 5 },
+      { label: 'Often takes challenging courses',                     value: 4 },
+      { label: 'Takes standard-level courses',                        value: 3 },
+      { label: 'Occasionally avoids more challenging options',        value: 2 },
+      { label: 'Not sure / not prioritized',                          value: 1 }
+    ]
+  },
+  // ── 2. COMMUNITY-MINDED ───────────────────────
+  {
+    id: 'q3', scored: true, section: '🌍 Community-Minded',
+    text: 'How consistently does your child contribute to helping others or improving their community (school, neighborhood, or beyond)?',
+    options: [
+      { label: 'Consistently involved with ongoing commitment or visible results', value: 5 },
+      { label: 'Regularly participates in service or helping others',             value: 4 },
+      { label: 'Occasionally volunteers or helps out',                            value: 3 },
+      { label: 'Rarely participates',                                             value: 2 },
+      { label: 'Not at all',                                                      value: 1 }
+    ]
+  },
+  {
+    id: 'q4', scored: true, section: '🌍 Community-Minded',
+    text: 'Does your child take initiative in helping others or solving problems?',
+    options: [
+      { label: 'Leads or creates initiatives', value: 5 },
+      { label: 'Often steps up',               value: 4 },
+      { label: 'Participates when asked',       value: 3 },
+      { label: 'Rarely takes initiative',       value: 2 },
+      { label: 'Not at all',                    value: 1 }
+    ]
+  },
+  // ── 3. HOLISTIC DEVELOPMENT ───────────────────
+  {
+    id: 'q5', scored: true, section: '🌱 Holistic Development',
+    text: 'How involved is your child in activities outside of regular classes (school clubs, sports, creative interests, programs, etc.)?',
+    options: [
+      { label: 'Deep involvement in a few meaningful activities',          value: 5 },
+      { label: 'Consistent involvement in 1–2 activities',                value: 4 },
+      { label: 'Participates in several activities without strong focus',  value: 3 },
+      { label: 'Minimal involvement',                                      value: 2 },
+      { label: 'None',                                                     value: 1 }
+    ]
+  },
+  {
+    id: 'q6', scored: true, section: '🌱 Holistic Development',
+    text: 'Do these activities connect to your child\'s deepest interests or future goals?',
+    options: [
+      { label: 'Clearly aligned and intentional', value: 5 },
+      { label: 'Somewhat aligned',                value: 4 },
+      { label: 'Not really connected',            value: 3 },
+      { label: 'Random participation',            value: 2 },
+      { label: 'No activities',                   value: 1 }
+    ]
+  },
+  // ── 4. ORGANIZED ──────────────────────────────
+  {
+    id: 'q7', scored: true, section: '📊 Organized',
+    text: 'Does your child track goals, activities, or important deadlines in any way?',
+    options: [
+      { label: 'Has a clear system and uses it consistently', value: 5 },
+      { label: 'Some structure',                              value: 4 },
+      { label: 'Inconsistent',                               value: 3 },
+      { label: 'Rarely tracks anything',                     value: 2 },
+      { label: 'No system at all',                           value: 1 }
+    ]
+  },
+  {
+    id: 'q8', scored: true, section: '📊 Organized',
+    text: 'Has your child started exploring or preparing for opportunities that could support their future (programs, competitions, scholarships, etc.)?',
+    options: [
+      { label: 'Yes—actively exploring and preparing ahead of time', value: 5 },
+      { label: 'Some awareness and early preparation',               value: 4 },
+      { label: 'Limited exposure so far',                            value: 3 },
+      { label: 'Very little awareness',                              value: 2 },
+      { label: 'None at all',                                        value: 1 }
+    ]
+  },
+  // ── 5. LEADERSHIP ─────────────────────────────
+  {
+    id: 'q9', scored: true, section: '🏆 Leadership',
+    text: 'In what ways does your child take initiative or lead (in school, activities, or at home—even in small or informal ways)?',
+    options: [
+      { label: 'Holds leadership roles or leads initiatives', value: 5 },
+      { label: 'Some leadership roles',                       value: 4 },
+      { label: 'Occasional leadership moments',               value: 3 },
+      { label: 'Rarely leads',                               value: 2 },
+      { label: 'None',                                       value: 1 }
+    ]
+  },
+  {
+    id: 'q10', scored: true, section: '🏆 Leadership',
+    text: 'How does your child approach challenges?',
+    options: [
+      { label: 'Seeks them out and grows from them', value: 5 },
+      { label: 'Handles them well',                  value: 4 },
+      { label: 'Sometimes avoids them',              value: 3 },
+      { label: 'Often avoids challenges',            value: 2 },
+      { label: 'Struggles significantly',            value: 1 }
+    ]
+  },
+  // ── 6. RELATIONSHIP BUILDING ──────────────────
+  {
+    id: 'q11', scored: true, section: '🤝 Relationship Building',
+    text: 'Does your child have strong relationships with adults who support or guide them (teachers, coaches, mentors)?',
+    options: [
+      { label: 'Strong advocates who know them well', value: 5 },
+      { label: 'Good relationships',                  value: 4 },
+      { label: 'Some connection',                     value: 3 },
+      { label: 'Limited connection',                  value: 2 },
+      { label: 'None',                               value: 1 }
+    ]
+  },
+  {
+    id: 'q12', scored: true, section: '🤝 Relationship Building',
+    text: 'If needed, would your child have someone who could strongly advocate for them (based on their character, effort, and impact)?',
+    options: [
+      { label: 'Yes—multiple strong advocates',   value: 5 },
+      { label: 'At least one strong connection',  value: 4 },
+      { label: 'A few casual connections',        value: 3 },
+      { label: 'Limited relationships',           value: 2 },
+      { label: 'No clear advocate',              value: 1 }
+    ]
+  },
+  // ── FINAL REFLECTION (no score) ───────────────
+  {
+    id: 'q13', scored: false, section: '🧠 Final Reflection (no score)',
+    text: 'Which of these best describes your child right now?',
+    options: [
+      { label: 'Focused, intentional, and building toward a clear future', value: 'A' },
+      { label: 'Doing well, but still figuring things out',                value: 'B' },
+      { label: 'Involved in things, but without a clear direction',        value: 'C' },
+      { label: 'Mostly focused on school, not much else',                  value: 'D' },
+      { label: "I'm not sure what direction they're heading in",           value: 'E' }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════════════════
+//  Result content by grade × score tier
+// ═══════════════════════════════════════════════════════════
+const RESULTS = {
+  '7th-8th': {
+    low: {
+      emoji: '🔴', label: 'Not Yet Positioned',
+      paragraphs: [
+        "You're not behind—but your child hasn't started building the foundation yet.",
+        "The students who win scholarships later don't start in senior year… They start becoming scholars early."
+      ],
+      focus: ['Exposure', 'Exploration', 'Building habits']
+    },
+    mid: {
+      emoji: '🟡', label: 'On Track… But Leaving Money on the Table',
+      paragraphs: [
+        "You're in a strong position—most families don't start thinking about this yet.",
+        "But what you do next matters. This is the stage where small decisions compound into big opportunities later."
+      ],
+      focus: ['Intentional activities', 'Early leadership', 'Skill building']
+    },
+    high: {
+      emoji: '🟢', label: 'Emerging Scholarship Magnet',
+      paragraphs: [
+        "Your child is ahead of the curve.",
+        "The goal now isn't doing more—it's being intentional so their efforts build toward a clear future story."
+      ],
+      focus: ['Direction', 'Alignment', 'Depth']
+    }
+  },
+  '9th-10th': {
+    low: {
+      emoji: '🔴', label: 'Not Yet Positioned',
+      paragraphs: [
+        "Right now, your child is not positioned to compete for scholarships.",
+        "And this is the stage where positioning begins to matter. If nothing changes, you may end up relying heavily on savings or loans."
+      ],
+      focus: ['Activity alignment', 'Leadership development', 'Academic rigor']
+    },
+    mid: {
+      emoji: '🟡', label: 'On Track… But Leaving Money on the Table',
+      paragraphs: [
+        "Your child is doing well—but this is where many families get stuck.",
+        'They assume things will "work out," but without strategy, students in this range often miss out on thousands.'
+      ],
+      focus: ['Strategic positioning', 'Building a clear narrative', 'Scholarship awareness']
+    },
+    high: {
+      emoji: '🟢', label: 'Emerging Scholarship Magnet',
+      paragraphs: [
+        "Your child is in a strong position to compete.",
+        "Now the difference comes down to strategy—not effort. The right moves now can significantly increase how much they receive."
+      ],
+      focus: ['Optimization', 'Targeting', 'Story development']
+    }
+  },
+  '11th': {
+    low: {
+      emoji: '🔴', label: 'Not Yet Positioned',
+      paragraphs: [
+        "This is a critical moment—and your child is not yet positioned to compete for scholarships.",
+        "At this stage, many opportunities are already evaluating leadership, involvement, and direction. Without a clear strategy, you may be left trying to \"find money\" instead of attracting it."
+      ],
+      focus: ['Urgent positioning', 'Build your narrative now', 'Target achievable scholarships']
+    },
+    mid: {
+      emoji: '🟡', label: 'On Track… But Leaving Money on the Table',
+      paragraphs: [
+        "Your child has strong potential—but time is limited.",
+        "At this stage, it's not about adding more activities. It's about positioning what already exists in a way that scholarship committees value."
+      ],
+      focus: ['Strategic positioning', 'Narrative building', 'Focused urgency']
+    },
+    high: {
+      emoji: '🟢', label: 'Emerging Scholarship Magnet',
+      paragraphs: [
+        "Your child is well-positioned—but this is where most families still miss out.",
+        "Why? Because they don't translate their child's experiences into a compelling story that attracts funding."
+      ],
+      focus: ['Optimization', 'Story development', 'Maximize funding']
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  Quiz state
+// ═══════════════════════════════════════════════════════════
+let currentIndex  = 0;
+let selectedValue = null;
+let grade         = null;
+let totalScore    = 0;
+let allAnswers    = {};
+
+// ── Kick off ─────────────────────────────────────────────
+renderQuestion();
+
+// ═══════════════════════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════════════════════
+function getTier(score) {
+  if (score <= 24) return 'low';
+  if (score <= 42) return 'mid';
+  return 'high';
+}
+
+function getResult() {
+  return RESULTS[grade][getTier(totalScore)];
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Render a question
+// ═══════════════════════════════════════════════════════════
+function renderQuestion() {
+  const q     = QUESTIONS[currentIndex];
+  const total = QUESTIONS.length;
+  const pct   = Math.round((currentIndex / total) * 100);
+  const letters = ['A', 'B', 'C', 'D', 'E'];
+
+  // Progress
+  document.getElementById('prog-label').textContent = `Question ${currentIndex + 1} of ${total}`;
+  document.getElementById('prog-pct').textContent   = `${pct}%`;
+  document.getElementById('prog-fill').style.width  = `${pct}%`;
+
+  // Question text
+  document.getElementById('q-section').textContent = q.section;
+  document.getElementById('q-text').textContent    = q.text;
+
+  // Button label
+  const isLast = currentIndex === QUESTIONS.length - 1;
+  document.getElementById('btn-next').textContent = isLast ? 'See My Results →' : 'Next →';
+  document.getElementById('btn-next').disabled    = true;
+
+  // Options
+  const container = document.getElementById('q-options');
+  container.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.innerHTML = `
+      <div class="option-letter">${letters[i]}</div>
+      <div class="option-text">${opt.label}</div>
+    `;
+    div.addEventListener('click', () => selectOption(div, opt.value));
+    container.appendChild(div);
+  });
+
+  selectedValue = null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Handle option selection
+// ═══════════════════════════════════════════════════════════
+function selectOption(el, value) {
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedValue = value;
+  document.getElementById('btn-next').disabled = false;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Advance to next question
+// ═══════════════════════════════════════════════════════════
+function nextQuestion() {
+  if (selectedValue === null) return;
+
+  const q = QUESTIONS[currentIndex];
+
+  // Store answer
+  allAnswers[q.id] = selectedValue;
+
+  if (q.isGrade) {
+    grade = selectedValue;
+  } else if (q.scored) {
+    totalScore += Number(selectedValue);
+  }
+
+  currentIndex++;
+
+  if (currentIndex >= QUESTIONS.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Show result screen
+// ═══════════════════════════════════════════════════════════
+function showResult() {
+  document.getElementById('screen-q').classList.add('hidden');
+  document.getElementById('screen-result').classList.remove('hidden');
+
+  const result = getResult();
+  const tier   = getTier(totalScore);
+
+  // Badge / category / score line
+  document.getElementById('r-emoji').textContent    = result.emoji;
+  document.getElementById('r-category').textContent = result.label;
+
+  const rangeMap = { low: '12–24', mid: '25–42', high: '43–60' };
+  document.getElementById('r-scoreline').textContent =
+    `Score: ${totalScore} / 60  ·  Range: ${rangeMap[tier]}  ·  Grade: ${grade}`;
+
+  // Message card
+  const card = document.getElementById('r-card');
+  const paras = result.paragraphs.map(p => `<p>${p}</p>`).join('');
+  const items = result.focus.map(f => `<li>${f}</li>`).join('');
+  card.innerHTML = `
+    ${paras}
+    <div class="focus-heading">👉 Focus Areas</div>
+    <ul class="focus-list">${items}</ul>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  Submit to Supabase
+// ═══════════════════════════════════════════════════════════
+async function submitResult() {
+  const name  = document.getElementById('inp-name').value.trim();
+  const email = document.getElementById('inp-email').value.trim();
+  const errEl = document.getElementById('form-error');
+
+  if (!name || !email || !email.includes('@')) {
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled    = true;
+  btn.textContent = 'Saving…';
+
+  const result = getResult();
+
+  const { error } = await db.from('quiz_submissions').insert({
+    name,
+    email,
+    grade,
+    total_score:      totalScore,
+    result_category:  getTier(totalScore),          // 'low' | 'mid' | 'high'
+    result_label:     result.label,                 // human-readable
+    q13_answer:       allAnswers['q13'] ?? null,     // reflection only
+    answers:          allAnswers                     // full answer map
+  });
+
+  if (error) {
+    console.error('Supabase error:', error);
+    btn.disabled    = false;
+    btn.textContent = 'Get My Action Plan →';
+    errEl.textContent = 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // Success — show thank-you
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('screen-ty').classList.remove('hidden');
+}
+</script>
+</body>
+</html>

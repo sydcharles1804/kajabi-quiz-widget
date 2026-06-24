@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.suo
+*.user
+
+# Temp
+*.tmp
+*.bak
+
+# ── NEVER commit these — they contain live Supabase credentials ──
+quiz-widget.html
+index.html
