@@ -3,423 +3,478 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scholarship Readiness Quiz</title>
+  <title>Scholarship Readiness Assessment</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #f4f6fb;
-      min-height: 100vh;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 24px 16px;
+    /* ── Local Fonts ─────────────────────────────────────────────── */
+    @font-face {
+      font-family: 'BricolageGrotesque';
+      src: url('./fonts/BricolageGrotesque-Regular.ttf') format('truetype');
+      font-weight: 400; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: 'BricolageGrotesque';
+      src: url('./fonts/BricolageGrotesque-Bold.ttf') format('truetype');
+      font-weight: 700; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: 'WorkSans';
+      src: url('./fonts/WorkSans-Regular.ttf') format('truetype');
+      font-weight: 400; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: 'WorkSans';
+      src: url('./fonts/WorkSans-Bold.ttf') format('truetype');
+      font-weight: 700; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: 'WorkSans';
+      src: url('./fonts/WorkSans-Italic.ttf') format('truetype');
+      font-weight: 400; font-style: italic; font-display: swap;
+    }
+    @font-face {
+      font-family: 'WorkSans';
+      src: url('./fonts/WorkSans-BoldItalic.ttf') format('truetype');
+      font-weight: 700; font-style: italic; font-display: swap;
+    }
+    @font-face {
+      font-family: 'IBMPlexMono';
+      src: url('./fonts/IBMPlexMono-Regular.ttf') format('truetype');
+      font-weight: 400; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: 'IBMPlexMono';
+      src: url('./fonts/IBMPlexMono-Bold.ttf') format('truetype');
+      font-weight: 700; font-style: normal; font-display: swap;
     }
 
-    /* ── Widget shell ─────────────────────────────────────── */
+    /* ── Reset ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Body ────────────────────────────────────────────────────── */
+    body {
+      font-family: 'WorkSans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: transparent;
+      padding: 6px;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* ── Widget shell ─────────────────────────────────────────────── */
     .widget {
-      background: #fff;
-      border-radius: 18px;
-      box-shadow: 0 6px 32px rgba(0,0,0,0.09);
+      background: #ffffff;
+      border: 1px solid #d8e8eb;
+      border-radius: 12px;
       width: 100%;
       max-width: 580px;
       overflow: hidden;
+      box-shadow: 0 2px 28px rgba(24, 145, 159, 0.08);
     }
 
-    /* ── Progress header ──────────────────────────────────── */
-    .progress-header {
-      padding: 22px 28px 0;
+    /* ── Progress bar ─────────────────────────────────────────────── */
+    .prog-section {
+      padding: 24px 28px 0;
     }
 
-    .progress-meta {
+    .prog-top {
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      color: #9aa3b2;
-      margin-bottom: 8px;
+      align-items: baseline;
+      margin-bottom: 10px;
     }
 
-    .progress-track {
-      height: 5px;
-      background: #eef0f5;
-      border-radius: 3px;
+    .prog-counter {
+      font-family: 'IBMPlexMono', monospace;
+      font-size: 11px;
+      color: #888888;
+      letter-spacing: 0.06em;
+    }
+
+    .prog-pct {
+      font-family: 'IBMPlexMono', monospace;
+      font-size: 11px;
+      color: #888888;
+    }
+
+    .prog-track {
+      height: 2px;
+      background: #d8eaed;
+      border-radius: 1px;
       overflow: hidden;
     }
 
-    .progress-fill {
+    .prog-fill {
       height: 100%;
-      background: linear-gradient(90deg, #3a6fdf, #6a9fff);
-      border-radius: 3px;
-      transition: width 0.4s cubic-bezier(.4,0,.2,1);
+      background: #18919f;
+      border-radius: 1px;
+      transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: width;
     }
 
-    /* ── Question body ────────────────────────────────────── */
-    .question-body {
+    /* ── Question body ────────────────────────────────────────────── */
+    .q-body {
       padding: 26px 28px 28px;
     }
 
-    .section-tag {
-      display: inline-block;
-      font-size: 11px;
+    /* Slide-in animation triggered on each new question */
+    .q-body.anim-in {
+      animation: qSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes qSlideIn {
+      from { opacity: 0; transform: translateX(16px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .section-label {
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.09em;
       text-transform: uppercase;
-      color: #3a6fdf;
-      background: #eef2ff;
-      border-radius: 20px;
-      padding: 4px 10px;
+      letter-spacing: 0.14em;
+      color: #888888;
       margin-bottom: 14px;
     }
 
-    .question-text {
-      font-size: 18px;
+    .q-text {
+      font-family: 'BricolageGrotesque', sans-serif;
+      font-size: 20px;
       font-weight: 700;
-      color: #12192e;
-      line-height: 1.45;
+      color: #2c3e50;
+      line-height: 1.38;
       margin-bottom: 22px;
     }
 
-    /* ── Options ──────────────────────────────────────────── */
+    /* ── Answer options ───────────────────────────────────────────── */
     .options {
       display: flex;
       flex-direction: column;
-      gap: 9px;
-      margin-bottom: 24px;
+      gap: 6px;
+      margin-bottom: 22px;
+    }
+
+    @keyframes optFadeUp {
+      from { opacity: 0; transform: translateY(9px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .option {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 13px 15px;
-      border: 2px solid #e4e8f0;
-      border-radius: 11px;
+      padding: 11px 14px;
+      border: 1px solid #d8e8eb;
+      border-left: 3px solid transparent;
+      border-radius: 6px;
       cursor: pointer;
-      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      opacity: 0;
+      animation: optFadeUp 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(var(--i, 0) * 0.055s + 0.04s);
+      transition:
+        border-left-color 0.15s ease,
+        background-color  0.15s ease;
       user-select: none;
     }
 
     .option:hover {
-      border-color: #3a6fdf;
-      background: #f0f4ff;
-      transform: translateX(2px);
+      border-left-color: #18919f;
+      background-color: #f0fafb;
     }
 
     .option.selected {
-      border-color: #3a6fdf;
-      background: #eef2ff;
+      border-left-color: #18919f;
+      background-color: #e8f6f8;
     }
 
-    .option-letter {
+    /* Letter badge */
+    .opt-letter {
       flex-shrink: 0;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: #eef0f5;
+      width: 24px;
+      height: 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
-      font-weight: 800;
-      color: #7a85a0;
-      transition: background 0.15s, color 0.15s;
+      font-family: 'IBMPlexMono', monospace;
+      font-size: 10px;
+      color: #888888;
+      background: #e0f2f4;
+      border-radius: 3px;
+      transition: background 0.15s ease, color 0.15s ease;
     }
 
-    .option.selected .option-letter {
-      background: #3a6fdf;
-      color: #fff;
+    .option.selected .opt-letter {
+      background: #18919f;
+      color: #ffffff;
     }
 
-    .option-text {
-      font-size: 14px;
-      color: #2c3550;
-      line-height: 1.4;
+    .opt-text {
+      font-size: 13.5px;
+      color: #2c3e50;
+      line-height: 1.45;
     }
 
-    /* ── Primary button ───────────────────────────────────── */
+    /* ── Primary button ───────────────────────────────────────────── */
     .btn-primary {
       width: 100%;
-      padding: 14px;
-      background: #3a6fdf;
-      color: #fff;
+      padding: 13px;
+      background: #18919f;
+      color: #ffffff;
       border: none;
-      border-radius: 11px;
-      font-size: 15px;
+      border-radius: 15px;
+      font-family: 'WorkSans', sans-serif;
+      font-size: 11.5px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
       cursor: pointer;
-      transition: background 0.15s, opacity 0.15s, transform 0.1s;
-      letter-spacing: 0.02em;
+      transition: background 0.15s ease, transform 0.1s ease;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background: #2a5bc9;
-      transform: translateY(-1px);
+      background: #127059;
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: scale(0.985);
     }
 
     .btn-primary:disabled {
-      background: #c0cef0;
+      background: #a8cdd2;
       cursor: not-allowed;
-      transform: none;
     }
 
-    /* ── Result screen ────────────────────────────────────── */
-    .result-top {
-      padding: 32px 28px 0;
-      text-align: center;
+    /* ── Hairline divider ─────────────────────────────────────────── */
+    .hairline {
+      height: 1px;
+      background: #d8e8eb;
     }
 
-    .result-emoji { font-size: 52px; line-height: 1; margin-bottom: 10px; }
-
-    .result-category {
-      font-size: 20px;
-      font-weight: 800;
-      color: #12192e;
-      margin-bottom: 5px;
+    /* ── Result screen ────────────────────────────────────────────── */
+    .result-header {
+      padding: 32px 28px 24px;
     }
 
-    .result-score-line {
-      font-size: 13px;
-      color: #9aa3b2;
+    /* Tier badge — colored pill, no emoji */
+    .tier-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      padding: 4px 10px 4px 9px;
+      border-radius: 3px;
       margin-bottom: 22px;
     }
 
+    .tier-badge::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    .tier-low  { color: #991b1b; background: #fff1f1; }
+    .tier-mid  { color: #92400e; background: #fefce8; }
+    .tier-high { color: #127059; background: #e8f5f2; }
+
+    /* Big score number */
+    .score-num {
+      font-family: 'IBMPlexMono', monospace;
+      font-size: 58px;
+      font-weight: 700;
+      color: #2c3e50;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .score-caption {
+      font-family: 'IBMPlexMono', monospace;
+      font-size: 11px;
+      color: #888888;
+      letter-spacing: 0.05em;
+      margin-bottom: 22px;
+    }
+
+    /* Result category heading */
+    .result-heading {
+      font-family: 'BricolageGrotesque', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #2c3e50;
+      line-height: 1.32;
+    }
+
+    /* Result message card */
     .result-card {
       margin: 0 28px;
-      background: #f7f9fc;
-      border-radius: 13px;
       padding: 20px;
-      text-align: left;
+      background: #f0fafb;
+      border-radius: 6px;
+      border-left: 3px solid #18919f;
     }
 
     .result-card p {
       font-size: 14px;
-      color: #3c4561;
+      color: #2c3e50;
       line-height: 1.75;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .result-card p:last-of-type { margin-bottom: 0; }
 
     .focus-heading {
-      font-size: 12px;
-      font-weight: 800;
+      font-size: 10px;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #3a6fdf;
-      margin-top: 16px;
-      margin-bottom: 8px;
+      letter-spacing: 0.13em;
+      color: #888888;
+      margin-top: 18px;
+      margin-bottom: 10px;
     }
 
     .focus-list {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 7px;
     }
 
     .focus-list li {
-      font-size: 13px;
-      color: #3c4561;
       display: flex;
-      align-items: center;
-      gap: 6px;
+      align-items: flex-start;
+      gap: 9px;
+      font-size: 13px;
+      color: #2c3e50;
+      line-height: 1.45;
     }
 
     .focus-list li::before {
-      content: '→';
-      color: #3a6fdf;
-      font-weight: 700;
+      content: '—';
+      font-family: 'IBMPlexMono', monospace;
+      font-size: 11px;
+      color: #18919f;
       flex-shrink: 0;
+      margin-top: 1px;
     }
 
-    /* ── Contact form ─────────────────────────────────────── */
+    /* ── Contact form ─────────────────────────────────────────────── */
     .contact-section {
       padding: 24px 28px 28px;
     }
 
-    .contact-heading {
-      font-size: 17px;
+    .email-notice {
+      font-family: 'BricolageGrotesque', sans-serif;
+      font-size: 18px;
       font-weight: 700;
-      color: #12192e;
-      margin-bottom: 4px;
+      color: #18919f;
+      line-height: 1.4;
     }
 
-    .contact-sub {
-      font-size: 13px;
-      color: #9aa3b2;
-      margin-bottom: 18px;
-    }
-
-    .field { margin-bottom: 12px; }
-
-    .field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      color: #5a6480;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 5px;
-    }
-
-    .field input {
-      width: 100%;
-      padding: 12px 14px;
-      border: 2px solid #e4e8f0;
-      border-radius: 9px;
-      font-size: 14px;
-      color: #12192e;
-      outline: none;
-      transition: border-color 0.15s;
-      background: #fff;
-    }
-
-    .field input:focus { border-color: #3a6fdf; }
-
-    .error-msg {
-      font-size: 12px;
-      color: #e53e3e;
-      margin-top: 10px;
-      display: none;
-    }
-
-    /* ── Thank-you screen ─────────────────────────────────── */
-    .thankyou {
-      padding: 56px 28px;
-      text-align: center;
-    }
-
-    .thankyou-icon { font-size: 60px; margin-bottom: 16px; }
-
-    .thankyou h2 {
-      font-size: 22px;
-      font-weight: 800;
-      color: #12192e;
-      margin-bottom: 10px;
-    }
-
-    .thankyou p {
-      font-size: 14px;
-      color: #6b7591;
-      line-height: 1.7;
-      max-width: 360px;
-      margin: 0 auto;
-    }
-
-    /* ── Utility ──────────────────────────────────────────── */
+    /* ── Utility ──────────────────────────────────────────────────── */
     .hidden { display: none !important; }
 
-    .divider {
-      height: 1px;
-      background: #eef0f5;
-      margin: 0 28px;
-    }
-
-    /* ── Mobile ───────────────────────────────────────────── */
+    /* ── Mobile ───────────────────────────────────────────────────── */
     @media (max-width: 520px) {
-      body { padding: 0; background: #fff; }
-      .widget { border-radius: 0; box-shadow: none; min-height: 100vh; }
+      body { padding: 0; }
+      .widget {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: none;
+      }
+      .q-text { font-size: 19px; }
+      .score-num { font-size: 48px; }
     }
   </style>
 </head>
 <body>
 <div class="widget" id="widget">
 
-  <!-- ════════════════════════════════════════════════
+  <!-- ══════════════════════════════════════
        SCREEN A — Questions
-  ════════════════════════════════════════════════ -->
+  ══════════════════════════════════════ -->
   <div id="screen-q">
-    <div class="progress-header">
-      <div class="progress-meta">
-        <span id="prog-label">Question 1 of 14</span>
-        <span id="prog-pct">0%</span>
+    <div class="prog-section">
+      <div class="prog-top">
+        <span class="prog-counter" id="prog-label">01 / 14</span>
+        <span class="prog-pct"    id="prog-pct">0%</span>
       </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+      <div class="prog-track">
+        <div class="prog-fill" id="prog-fill" style="width:0%"></div>
       </div>
     </div>
-    <div class="question-body">
-      <div class="section-tag" id="q-section"></div>
-      <div class="question-text" id="q-text"></div>
-      <div class="options" id="q-options"></div>
-      <button class="btn-primary" id="btn-next" disabled onclick="nextQuestion()">Next →</button>
-    </div>
-  </div>
 
-  <!-- ════════════════════════════════════════════════
-       SCREEN B — Result + Contact form
-  ════════════════════════════════════════════════ -->
-  <div id="screen-result" class="hidden">
-    <div class="result-top">
-      <div class="result-emoji"   id="r-emoji"></div>
-      <div class="result-category" id="r-category"></div>
-      <div class="result-score-line" id="r-scoreline"></div>
-      <div class="result-card"   id="r-card"></div>
-    </div>
-
-    <div style="padding: 24px 28px 0;">
-      <div class="divider"></div>
-    </div>
-
-    <div class="contact-section">
-      <div class="contact-heading">Get your personalized action plan</div>
-      <div class="contact-sub">Enter your info below and we'll send you tailored next steps.</div>
-
-      <div class="field">
-        <label>Your Name</label>
-        <input type="text" id="inp-name" placeholder="Jane Smith" autocomplete="name" />
-      </div>
-      <div class="field">
-        <label>Email Address</label>
-        <input type="email" id="inp-email" placeholder="jane@example.com" autocomplete="email" />
-      </div>
-
-      <div class="error-msg" id="form-error">Please enter a valid name and email address.</div>
-
-      <button class="btn-primary" id="btn-submit" onclick="submitResult()" style="margin-top:14px">
-        Get My Action Plan →
+    <div class="q-body" id="q-body">
+      <div class="section-label" id="q-section"></div>
+      <div class="q-text"        id="q-text"></div>
+      <div class="options"       id="q-options"></div>
+      <button class="btn-primary" id="btn-next" disabled onclick="nextQuestion()">
+        Continue
       </button>
     </div>
   </div>
 
-  <!-- ════════════════════════════════════════════════
-       SCREEN C — Thank you
-  ════════════════════════════════════════════════ -->
-  <div id="screen-ty" class="hidden">
-    <div class="thankyou">
-      <div class="thankyou-icon">🎉</div>
-      <h2>You're all set!</h2>
-      <p>
-        We've received your results and will be in touch soon with a
-        personalized scholarship readiness plan for your child.
-      </p>
+  <!-- ══════════════════════════════════════
+       SCREEN B — Result + Contact form
+  ══════════════════════════════════════ -->
+  <div id="screen-result" class="hidden">
+
+    <div class="result-header">
+      <div id="r-tier" class="tier-badge"></div>
+      <div class="score-num"     id="r-score-num">0</div>
+      <div class="score-caption" id="r-score-cap">out of 60 points</div>
+      <div class="result-heading" id="r-category"></div>
+    </div>
+
+    <div id="r-card" class="result-card"></div>
+
+    <div class="hairline" style="margin-top:24px;"></div>
+
+    <div class="contact-section">
+      <div class="email-notice" id="email-notice"></div>
     </div>
   </div>
 
 </div><!-- /.widget -->
 
 <script>
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 //  Supabase client
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_KEY = 'YOUR_SUPABASE_PUBLISHABLE_KEY';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ═══════════════════════════════════════════════════════════
-//  Question bank
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  Contact identity — passed in via URL from the Kajabi landing page
+// ═══════════════════════════════════════════════════════════════
+const urlParams    = new URLSearchParams(window.location.search);
+const contactEmail = urlParams.get('email');
+const contactName  = urlParams.get('name');
+
+// ═══════════════════════════════════════════════════════════════
+//  Auto-height: tell parent iframe our exact rendered height
+// ═══════════════════════════════════════════════════════════════
+function sendHeight() {
+  const h = document.getElementById('widget').offsetHeight + 12;
+  window.parent.postMessage({ type: 'quizHeight', height: h }, '*');
+}
+
+if (window.ResizeObserver) {
+  new ResizeObserver(sendHeight).observe(document.getElementById('widget'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Question bank  (no emojis — replaced with clean text labels)
+// ═══════════════════════════════════════════════════════════════
 const QUESTIONS = [
   {
-    id: 'grade',
-    isGrade: true,
-    scored: false,
-    section: 'Required First',
+    id: 'grade', isGrade: true, scored: false,
+    section: 'Required — Start Here',
     text: 'What grade is your child currently in?',
     options: [
       { label: '7th–8th grade',  value: '7th-8th'  },
@@ -427,32 +482,35 @@ const QUESTIONS = [
       { label: '11th grade',     value: '11th'      }
     ]
   },
-  // ── 1. STUDIOUS ───────────────────────────────
+  // ── 1. Studious ───────────────────────────────────────
   {
-    id: 'q1', scored: true, section: '📚 Studious — Academic Strength',
-    text: 'How would you describe your child\'s academic performance?',
+    id: 'q1', scored: true,
+    section: 'Studious — Academic Strength',
+    text: "How would you describe your child's academic performance?",
     options: [
-      { label: 'Mostly A\'s (with occasional B\'s)',        value: 5 },
-      { label: 'Mostly B\'s (with some A\'s)',              value: 4 },
-      { label: 'Mostly B\'s',                               value: 3 },
-      { label: 'B\'s and C\'s',                             value: 2 },
-      { label: 'Struggles academically',                    value: 1 }
+      { label: "Mostly A's (with occasional B's)", value: 5 },
+      { label: "Mostly B's (with some A's)",       value: 4 },
+      { label: "Mostly B's",                        value: 3 },
+      { label: "B's and C's",                       value: 2 },
+      { label: 'Struggles academically',            value: 1 }
     ]
   },
   {
-    id: 'q2', scored: true, section: '📚 Studious — Academic Strength',
+    id: 'q2', scored: true,
+    section: 'Studious — Academic Strength',
     text: 'Is your child taking the most challenging classes available to them at their current school?',
     options: [
       { label: 'Yes—consistently seeks the highest level available', value: 5 },
-      { label: 'Often takes challenging courses',                     value: 4 },
-      { label: 'Takes standard-level courses',                        value: 3 },
-      { label: 'Occasionally avoids more challenging options',        value: 2 },
-      { label: 'Not sure / not prioritized',                          value: 1 }
+      { label: 'Often takes challenging courses',                    value: 4 },
+      { label: 'Takes standard-level courses',                       value: 3 },
+      { label: 'Occasionally avoids more challenging options',       value: 2 },
+      { label: 'Not sure / not prioritized',                         value: 1 }
     ]
   },
-  // ── 2. COMMUNITY-MINDED ───────────────────────
+  // ── 2. Community-Minded ───────────────────────────────
   {
-    id: 'q3', scored: true, section: '🌍 Community-Minded',
+    id: 'q3', scored: true,
+    section: 'Community-Minded',
     text: 'How consistently does your child contribute to helping others or improving their community (school, neighborhood, or beyond)?',
     options: [
       { label: 'Consistently involved with ongoing commitment or visible results', value: 5 },
@@ -463,7 +521,8 @@ const QUESTIONS = [
     ]
   },
   {
-    id: 'q4', scored: true, section: '🌍 Community-Minded',
+    id: 'q4', scored: true,
+    section: 'Community-Minded',
     text: 'Does your child take initiative in helping others or solving problems?',
     options: [
       { label: 'Leads or creates initiatives', value: 5 },
@@ -473,21 +532,23 @@ const QUESTIONS = [
       { label: 'Not at all',                    value: 1 }
     ]
   },
-  // ── 3. HOLISTIC DEVELOPMENT ───────────────────
+  // ── 3. Holistic Development ───────────────────────────
   {
-    id: 'q5', scored: true, section: '🌱 Holistic Development',
+    id: 'q5', scored: true,
+    section: 'Holistic Development',
     text: 'How involved is your child in activities outside of regular classes (school clubs, sports, creative interests, programs, etc.)?',
     options: [
-      { label: 'Deep involvement in a few meaningful activities',          value: 5 },
-      { label: 'Consistent involvement in 1–2 activities',                value: 4 },
-      { label: 'Participates in several activities without strong focus',  value: 3 },
-      { label: 'Minimal involvement',                                      value: 2 },
-      { label: 'None',                                                     value: 1 }
+      { label: 'Deep involvement in a few meaningful activities',         value: 5 },
+      { label: 'Consistent involvement in 1–2 activities',               value: 4 },
+      { label: 'Participates in several activities without strong focus', value: 3 },
+      { label: 'Minimal involvement',                                     value: 2 },
+      { label: 'None',                                                    value: 1 }
     ]
   },
   {
-    id: 'q6', scored: true, section: '🌱 Holistic Development',
-    text: 'Do these activities connect to your child\'s deepest interests or future goals?',
+    id: 'q6', scored: true,
+    section: 'Holistic Development',
+    text: "Do these activities connect to your child's deepest interests or future goals?",
     options: [
       { label: 'Clearly aligned and intentional', value: 5 },
       { label: 'Somewhat aligned',                value: 4 },
@@ -496,9 +557,10 @@ const QUESTIONS = [
       { label: 'No activities',                   value: 1 }
     ]
   },
-  // ── 4. ORGANIZED ──────────────────────────────
+  // ── 4. Organized ──────────────────────────────────────
   {
-    id: 'q7', scored: true, section: '📊 Organized',
+    id: 'q7', scored: true,
+    section: 'Organized',
     text: 'Does your child track goals, activities, or important deadlines in any way?',
     options: [
       { label: 'Has a clear system and uses it consistently', value: 5 },
@@ -509,7 +571,8 @@ const QUESTIONS = [
     ]
   },
   {
-    id: 'q8', scored: true, section: '📊 Organized',
+    id: 'q8', scored: true,
+    section: 'Organized',
     text: 'Has your child started exploring or preparing for opportunities that could support their future (programs, competitions, scholarships, etc.)?',
     options: [
       { label: 'Yes—actively exploring and preparing ahead of time', value: 5 },
@@ -519,9 +582,10 @@ const QUESTIONS = [
       { label: 'None at all',                                        value: 1 }
     ]
   },
-  // ── 5. LEADERSHIP ─────────────────────────────
+  // ── 5. Leadership ─────────────────────────────────────
   {
-    id: 'q9', scored: true, section: '🏆 Leadership',
+    id: 'q9', scored: true,
+    section: 'Leadership',
     text: 'In what ways does your child take initiative or lead (in school, activities, or at home—even in small or informal ways)?',
     options: [
       { label: 'Holds leadership roles or leads initiatives', value: 5 },
@@ -532,7 +596,8 @@ const QUESTIONS = [
     ]
   },
   {
-    id: 'q10', scored: true, section: '🏆 Leadership',
+    id: 'q10', scored: true,
+    section: 'Leadership',
     text: 'How does your child approach challenges?',
     options: [
       { label: 'Seeks them out and grows from them', value: 5 },
@@ -542,9 +607,10 @@ const QUESTIONS = [
       { label: 'Struggles significantly',            value: 1 }
     ]
   },
-  // ── 6. RELATIONSHIP BUILDING ──────────────────
+  // ── 6. Relationship Building ──────────────────────────
   {
-    id: 'q11', scored: true, section: '🤝 Relationship Building',
+    id: 'q11', scored: true,
+    section: 'Relationship Building',
     text: 'Does your child have strong relationships with adults who support or guide them (teachers, coaches, mentors)?',
     options: [
       { label: 'Strong advocates who know them well', value: 5 },
@@ -555,19 +621,21 @@ const QUESTIONS = [
     ]
   },
   {
-    id: 'q12', scored: true, section: '🤝 Relationship Building',
+    id: 'q12', scored: true,
+    section: 'Relationship Building',
     text: 'If needed, would your child have someone who could strongly advocate for them (based on their character, effort, and impact)?',
     options: [
-      { label: 'Yes—multiple strong advocates',   value: 5 },
-      { label: 'At least one strong connection',  value: 4 },
-      { label: 'A few casual connections',        value: 3 },
-      { label: 'Limited relationships',           value: 2 },
-      { label: 'No clear advocate',              value: 1 }
+      { label: 'Yes—multiple strong advocates',  value: 5 },
+      { label: 'At least one strong connection', value: 4 },
+      { label: 'A few casual connections',       value: 3 },
+      { label: 'Limited relationships',          value: 2 },
+      { label: 'No clear advocate',             value: 1 }
     ]
   },
-  // ── FINAL REFLECTION (no score) ───────────────
+  // ── Final Reflection (unscored) ───────────────────────
   {
-    id: 'q13', scored: false, section: '🧠 Final Reflection (no score)',
+    id: 'q13', scored: false,
+    section: 'Final Reflection — Unscored',
     text: 'Which of these best describes your child right now?',
     options: [
       { label: 'Focused, intentional, and building toward a clear future', value: 'A' },
@@ -579,105 +647,428 @@ const QUESTIONS = [
   }
 ];
 
-// ═══════════════════════════════════════════════════════════
-//  Result content by grade × score tier
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  Result content  (grade × tier — no emojis)
+// ═══════════════════════════════════════════════════════════════
 const RESULTS = {
   '7th-8th': {
     low: {
-      emoji: '🔴', label: 'Not Yet Positioned',
-      paragraphs: [
-        "You're not behind—but your child hasn't started building the foundation yet.",
-        "The students who win scholarships later don't start in senior year… They start becoming scholars early."
+      label: 'The Foundation-Building Stage',
+      heading: "You Found the Gap Early—While There Is Still Time to Shape What Comes Next",
+      summary: [
+        "Take a breath. You are not too late.",
+        "Your child's score suggests that they have not yet started building the foundation of a strong SCHOLAR Profile. They may be going to school, completing their work, and doing what is expected—but we are not yet seeing consistent evidence of curiosity, initiative, service, leadership, or meaningful involvement.",
+        "That does not mean something is wrong with your child. It means their potential has not been intentionally developed yet.",
+        "Students who eventually earn significant scholarships rarely become competitive overnight. Long before they submit an application, they have usually spent years discovering their interests, learning how to contribute, building strong relationships, and developing habits that distinguish them from other good students.",
+        "The good news is that you discovered this in middle school.",
+        "You now have the opportunity to help your child become more than a student who simply moves through school. You can help them become a SCHOLAR whose interests, character, and contribution grow stronger over time.",
+        "This score is not a verdict. It is an early signal—and you have time to respond to it."
       ],
-      focus: ['Exposure', 'Exploration', 'Building habits']
+      emailSubject: "Your child has time — but this is the time to begin",
+      introParas: [
+        "You took the SCHOLAR Score because you do not want to wait until senior year to learn that good grades were not enough.",
+        "Your child's result confirms that there is foundational work to do, but it also gives your family a tremendous advantage: time.",
+        "Right now, your goal is not to make your child busier. It is to help them discover what is worth developing."
+      ],
+      introBullets: [],
+      nextSteps: [
+        { title: "Create opportunities for exploration.", body: "Expose your child to different subjects, communities, creative outlets, programs, and experiences. Pay attention to what holds their interest without constant reminders from you." },
+        { title: "Build habits before building a résumé.", body: "Responsibility, organization, follow-through, and initiative may feel small now, but these habits shape how your child performs when high school becomes more demanding." },
+        { title: "Notice the early evidence of greatness.", body: "Where does your child show curiosity? What problems do they care about? When do other people depend on them? What comes naturally to them? These clues can eventually help you make better decisions about courses, activities, service, leadership, and scholarship opportunities." }
+      ],
+      whatThisMeans: [
+        "You do not have to become the parent who spends high school scrambling to piece together a competitive profile.",
+        "You are thoughtful and a forward planner because you want your child to have choices — and you want those choices without sacrificing your peace or your family's financial future.",
+        "The next step is learning how scholarship-winning students develop long before they begin completing applications."
+      ],
+      offer: {
+        heading: "Your recommended next step: Scholars Get Dollars",
+        paragraphs: [
+          "Scholars Get Dollars will save you years of worry and wondering about how you're going to pay for college.",
+          "Designed to help discerning parents understand what scholarship committees are looking for and how to position your child for major scholarship success from the start of high school.",
+          "You'll learn how to develop your child's mindset, activities, and educational experiences to support your goal of getting them to college on scholarships - so that your money stays working for you."
+        ],
+        bullets: [],
+        cta: "Get Your Copy of Scholars Get Dollars"
+      }
     },
     mid: {
-      emoji: '🟡', label: 'On Track… But Leaving Money on the Table',
-      paragraphs: [
-        "You're in a strong position—most families don't start thinking about this yet.",
-        "But what you do next matters. This is the stage where small decisions compound into big opportunities later."
+      label: 'Early Potential Without Clear Direction',
+      heading: "Your Child Has Potential. Now You Need to Know Where It Is Leading.",
+      summary: [
+        "Your child already has several promising pieces of a strong SCHOLAR Profile.",
+        "They may be doing well academically, participating in activities, or showing maturity and responsibility in certain areas. You can see that they are a good kid with real potential.",
+        "What may be harder to see is how those pieces connect.",
+        "Right now, your child has activity — but not yet a clear trajectory.",
+        "This is where families can gain an early advantage or unknowingly remain in the comfort zone. Without greater intention, a promising middle school student can enter high school involved in many things but never develop the depth that makes them distinctive.",
+        "Your child does not need to do everything.",
+        "They need time and guidance to discover the interests, strengths, and contributions that are worth developing.",
+        "You found this early enough to shape their high school journey without turning childhood into a scholarship competition."
       ],
-      focus: ['Intentional activities', 'Early leadership', 'Skill building']
+      emailSubject: "Your child is off to a promising start—here's what comes next",
+      introParas: [
+        "Your child's SCHOLAR Score reveals something encouraging: the potential is already there.",
+        "Now your family needs to move from general participation to intentional development.",
+        "The danger at this stage is not that your child will fail. It is that they will continue doing well without developing a clear sense of what makes them distinctive."
+      ],
+      introBullets: [],
+      nextSteps: [
+        { title: "Look for patterns — not isolated activities.", body: "Which subjects, issues, talents, or experiences repeatedly capture your child's attention? A pattern is more valuable than a long list of unrelated activities." },
+        { title: "Encourage greater initiative.", body: "Begin moving your child from “Tell me what to do” toward “Here is what I noticed, and here is what I would like to try.” Initiative can begin at home, in the classroom, on a team, or in the community." },
+        { title: "Deepen what is already working.", body: "Your child does not need another random club. They may need more consistency, responsibility, or challenge within an interest they already enjoy." },
+        { title: "Let exploration remain exploration.", body: "Your child does not need to select a career or commit to a lifelong cause. The goal is to notice where their curiosity, character, and contribution begin to intersect." }
+      ],
+      whatThisMeans: [
+        "You are not simply the provider responsible for paying for college later.",
+        "You are the strategic guide who can help your child make better choices now—before missed opportunities become expensive.",
+        "The advantage of starting early is not that your child has to do more. It is that your family has more time to determine what is worth doing."
+      ],
+      offer: {
+        heading: "Your recommended next step: Scholars Get Dollars",
+        paragraphs: [
+          "Scholars Get Dollars will save you years of worry and wondering about how you're going to pay for college.",
+          "Use Scholars Get Dollars to understand what scholarship committees are looking for and how to position your child for major scholarship success from the start of high school.",
+          "You'll learn how to develop your child's mindset, activities, and educational experiences to support your goal of getting them to college on scholarships - so that your money stays working for you."
+        ],
+        bullets: [],
+        cta: "Get Your Copy of Scholars Get Dollars"
+      }
     },
     high: {
-      emoji: '🟢', label: 'Emerging Scholarship Magnet',
-      paragraphs: [
-        "Your child is ahead of the curve.",
-        "The goal now isn't doing more—it's being intentional so their efforts build toward a clear future story."
+      label: 'Early SCHOLAR Potential',
+      heading: "Your Child Is Ahead—but Potential Still Needs a Strategy",
+      summary: [
+        "Your child is showing early signs of becoming a SCHOLAR — and I do not say that lightly.",
+        "At a stage when many students are still waiting for adults to direct their experiences, your child is already demonstrating several qualities that can eventually make them competitive: academic engagement, curiosity, initiative, contribution, leadership, or strong relationships.",
+        "You have every reason to be proud.",
+        "But this score is not an invitation to pile on more activities. It is an opportunity to ask a more sophisticated question:",
+        "How can what my child is doing now become part of who they are becoming?",
+        "Scholarship committees do not simply reward busy students. They invest in young people whose choices demonstrate consistency, growth, purpose, and future potential.",
+        "Your child has an early advantage. Now that advantage needs to be protected and developed with intention."
       ],
-      focus: ['Direction', 'Alignment', 'Depth']
+      emailSubject: "Your child is ahead—here's how to protect that advantage",
+      introParas: [
+        "Your child's high SCHOLAR Score confirms that you are not imagining their potential.",
+        "They are already showing qualities that could become the foundation of a compelling scholarship profile. The next challenge is making sure those qualities develop into something deeper than an impressive middle school record.",
+        "The goal is not more pressure. It is better alignment."
+      ],
+      introBullets: [],
+      nextSteps: [
+        { title: "Deepen a few meaningful interests.", body: "Help your child move beyond trying an activity into learning, creating, contributing, or taking responsibility within it." },
+        { title: "Connect activities to identity.", body: "Ask what your child's choices reveal about their curiosity, character, values, and the kinds of problems they may want to solve." },
+        { title: "Seek appropriate challenge.", body: "Consider academic, creative, or enrichment experiences that stretch your child without overwhelming them." },
+        { title: "Begin documenting their development.", body: "Keep a simple record of projects, responsibilities, contributions, recognition, and meaningful experiences. You are preserving the evidence and stories that may matter later." }
+      ],
+      whatThisMeans: [
+        "You do not have to manufacture an impressive child or manage every step of their journey.",
+        "Your role is to recognize what is already developing and make thoughtful decisions about where to invest your family's time, energy, and money.",
+        "You are raising a child with options and building a future where their success does not have to come at the expense of your own."
+      ],
+      offer: {
+        heading: "Your recommended next step: Scholars Get Dollars",
+        paragraphs: [
+          "Scholars Get Dollars will help you turn this early potential into an intentional foundation for high school and future scholarship success.",
+          "You'll learn how to develop your child's mindset, activities, and educational experiences to support your goal of getting them to college on scholarships - so that your money stays working for you."
+        ],
+        bullets: [],
+        cta: "Get Your Copy of Scholars Get Dollars"
+      }
     }
   },
   '9th-10th': {
     low: {
-      emoji: '🔴', label: 'Not Yet Positioned',
-      paragraphs: [
-        "Right now, your child is not positioned to compete for scholarships.",
-        "And this is the stage where positioning begins to matter. If nothing changes, you may end up relying heavily on savings or loans."
+      label: 'The Scholarship Positioning Gap',
+      heading: "Your Child May Be Doing Fine in School — but “Fine” Can Become Expensive",
+      summary: [
+        "Your child may attend school, complete their work, stay out of trouble, and earn grades that make you proud.",
+        "You may have believed that if they continued working hard, scholarship opportunities would eventually follow.",
+        "But this score reveals an important gap:",
+        "Your child may be doing well without yet becoming competitive.",
+        "Scholarship committees are often choosing among thousands of good students with solid grades and full schedules. What separates the students who attract significant consideration is the strength of their complete profile: how they think, contribute, lead, build relationships, pursue interests, and demonstrate future potential.",
+        "Right now, your child's profile does not yet provide enough evidence in those areas.",
+        "The doors are not closed. But this is the moment to stop hoping everything will fall into place later and start developing your child's potential with greater precision."
       ],
-      focus: ['Activity alignment', 'Leadership development', 'Academic rigor']
+      emailSubject: "Good grades may not be enough—here's your next move",
+      introParas: [
+        "You have watched your child work hard, and you want that work to matter.",
+        "The fear beneath this score is not simply, “Will my child get into college?”",
+        "It is: What if we reach senior year and discover that we did not know what scholarship committees were looking for?",
+        "Your child still has time to strengthen their SCHOLAR Profile, but broad advice and random activities will not close the gap. You need to know which changes will matter most."
+      ],
+      introBullets: [],
+      nextSteps: [
+        { title: "Identify the specific gaps in the profile.", body: "Determine whether your child most needs academic challenge, deeper service, greater initiative, leadership development, better organization, or stronger adult relationships." },
+        { title: "Replace random involvement with aligned involvement.", body: "Choose experiences that reflect your child's real interests and give them room to grow, contribute, and eventually lead." },
+        { title: "Increase challenge strategically.", body: "Select appropriate honors and advanced classes, tutoring, or enrichment opportunities based on your child's ability and goals — not comparison or pressure." },
+        { title: "Build contribution and relationships.", body: "Help your child become someone teachers, mentors, and community members know, trust, and can eventually advocate for." }
+      ],
+      whatThisMeans: [
+        "You do not need to carry the entire cost and pressure of college by yourself.",
+        "You are a strategic planner — not simply the person expected to write the check. By identifying the right priorities now, you can help your child become more competitive while protecting your pockets from avoidable college costs later."
+      ],
+      offer: {
+        heading: "Your recommended next step: SCHOLAR Prep",
+        paragraphs: [
+          "SCHOLAR Prep helps you move beyond a general score to understand:"
+        ],
+        bullets: [
+          "Your child's specific SCHOLAR Profile",
+          "The strengths that should be amplified",
+          "The gaps that could limit future opportunities",
+          "The experiences and Scholarship Categories that best fit your child",
+          "The next steps that deserve your family's time and attention"
+        ],
+        cta: "Explore SCHOLAR Prep"
+      }
     },
     mid: {
-      emoji: '🟡', label: 'On Track… But Leaving Money on the Table',
-      paragraphs: [
-        "Your child is doing well—but this is where many families get stuck.",
-        'They assume things will "work out," but without strategy, students in this range often miss out on thousands.'
+      label: 'Impressive, but Not Yet Distinctive',
+      heading: "Your Child Is Working Hard. The Question Is Whether the Right People Will Recognize Their Value.",
+      summary: [
+        "Your child is doing well.",
+        "They may have good grades, participate in activities, volunteer, play a sport, or belong to several organizations. On paper, they look impressive.",
+        "But within a competitive applicant pool, they may still blend in.",
+        "That can be difficult to hear because you have watched them stay up late to complete assignments, juggle a full schedule, and put in effort to get this far. You expect that hard work to count.",
+        "It does — but effort alone does not determine who receives scholarship money.",
+        "Positioning determines whether decision-makers recognize the value of that effort.",
+        "Right now, your child has several strong pieces, but those pieces do not yet tell a clear story about what makes them distinctive, what they care about, or where they are headed.",
+        "This is the stage where strategy begins to affect the future price of college."
       ],
-      focus: ['Strategic positioning', 'Building a clear narrative', 'Scholarship awareness']
+      emailSubject: "Your child looks impressive—but will they stand out?",
+      introParas: [
+        "Your child's score places them in what I call the “scholarship comfort zone.”",
+        "They are doing enough that no one is especially concerned. But they may not yet be positioned strongly enough to compete for the kind of money that protects your savings, preserves retirement, or drastically reduces the cost of college.",
+        "This is how hardworking families get caught off guard.",
+        "They assume a good student will naturally become a strong scholarship candidate — only to discover that thousands of applicants have similar grades, activities, and accomplishments."
+      ],
+      introBullets: [],
+      nextSteps: [
+        { title: "Find the thread connecting your child's experiences.", body: "What do their strongest activities reveal about their interests, values, talents, or future direction? Double down on the things that matter most to them." },
+        { title: "Move from participation to contribution.", body: "Help your child identify where they can improve something, solve a problem, support others, create a resource, or accept meaningful responsibility." },
+        { title: "Choose depth over volume.", body: "A long résumé is not automatically a competitive résumé. Sustained commitment and measurable growth usually reveal more than scattered involvement." },
+        { title: "Begin developing the story.", body: "Your child should be able to explain not only what they did, but why it mattered, how it changed them, and what they intend to do next." }
+      ],
+      whatThisMeans: [
+        "You are not looking for another generic checklist or hundreds of scholarships to sort through after work.",
+        "You want a precise plan that shows you what matters for your child.",
+        "That is what sophisticated scholarship preparation should provide: fewer wasted activities, clearer priorities, stronger positioning, and confidence that your family is not unknowingly leaving major opportunities on the table."
+      ],
+      offer: {
+        heading: "Your recommended next step: SCHOLAR Prep",
+        paragraphs: [
+          "Inside SCHOLAR Prep, you will learn how to distinguish what is merely impressive from what makes your child competitive—and build a strategy around their actual profile."
+        ],
+        bullets: [],
+        cta: "Explore SCHOLAR Prep"
+      }
     },
     high: {
-      emoji: '🟢', label: 'Emerging Scholarship Magnet',
-      paragraphs: [
-        "Your child is in a strong position to compete.",
-        "Now the difference comes down to strategy—not effort. The right moves now can significantly increase how much they receive."
+      label: 'Strong Profile, Untapped Financial Potential',
+      heading: "Your Child Has Built a Strong Profile. Now It Needs to Translate Into Real Opportunity.",
+      summary: [
+        "Your child is demonstrating many of the qualities colleges and scholarship organizations value: academic commitment, meaningful involvement, initiative, leadership, contribution, and strong relationships.",
+        "This is an exciting position — but it can also create an expensive assumption.",
+        "A strong profile does not automatically produce strong scholarship offers.",
+        "Highly qualified students miss significant money every year because their strengths are not strategically developed, communicated, or matched with the right opportunities.",
+        "At this level, the question is no longer:",
+        "“Is my child doing enough?”",
+        "The better question is:",
+        "“What makes my child especially valuable — and which institutions are most likely to invest in that value?”",
+        "Your child has done important work. Now you need the precision to turn that potential into meaningful college and scholarship opportunities."
       ],
-      focus: ['Optimization', 'Targeting', 'Story development']
+      emailSubject: "Your child is qualified, now let's turn that into scholarship leverage",
+      introParas: [
+        "Your child's score confirms that they have a strong SCHOLAR Profile.",
+        "You should feel proud and relieved to know that many of the right elements are already present.",
+        "But this is not the time to assume that a strong résumé will speak for itself.",
+        "The right adjustments now could influence which colleges recruit your child, how effectively their story is communicated, and whether their achievements translate into meaningful scholarship consideration."
+      ],
+      introBullets: [],
+      nextSteps: [
+        { title: "Identify your child's strongest competitive assets.", body: "Determine which combination of academic strengths, interests, leadership, service, talents, relationships, and future goals makes their profile distinctive." },
+        { title: "Develop a clear trajectory.", body: "Make sure your child's experiences show growth and direction — not simply a collection of accomplishments." },
+        { title: "Research institutional fit early.", body: "Begin identifying colleges and scholarship programs that have a history of investing in students with strengths like your child's." },
+        { title: "Preserve the evidence.", body: "Document results, impact, recognition, responsibilities, relationships, and stories that can later strengthen applications, essays, and recommendation letters." }
+      ],
+      whatThisMeans: [
+        "You are not merely preparing your child to be admitted somewhere.",
+        "You are building the leverage to make more informed choices about where they apply, what you pay for, and which opportunities deserve your attention.",
+        "You want the pride of seeing your child recognized and rewarded for who they have become. And you deserve the relief of knowing you did not have to sacrifice everything you built to make it possible."
+      ],
+      offer: {
+        heading: "Your recommended next step: SCHOLAR Prep",
+        paragraphs: [
+          "SCHOLAR Prep helps you connect profile to price by identifying:"
+        ],
+        bullets: [
+          "What makes your child competitive",
+          "What still needs to be strengthened",
+          "Which Scholarship Categories align with their profile",
+          "Which schools may be more likely to invest in them",
+          "How to convert strong experiences into a compelling scholarship story"
+        ],
+        cta: "Explore SCHOLAR Prep"
+      }
     }
   },
   '11th': {
     low: {
-      emoji: '🔴', label: 'Not Yet Positioned',
-      paragraphs: [
-        "This is a critical moment—and your child is not yet positioned to compete for scholarships.",
-        "At this stage, many opportunities are already evaluating leadership, involvement, and direction. Without a clear strategy, you may be left trying to \"find money\" instead of attracting it."
+      label: 'Immediate, Focused Repositioning',
+      heading: "You Do Not Have Time to Panic—but You Do Need a Focused Plan",
+      summary: [
+        "Your child is entering the final stretch of building the record colleges and scholarship committees will evaluate.",
+        "Right now, their SCHOLAR Profile does not position them to compete strongly for significant scholarship opportunities.",
+        "You may be wondering:",
+        "Have we waited too long? Have we unknowingly missed opportunities we cannot get back?",
+        "Some options may now be limited, but meaningful improvement is still possible.",
+        "The answer is not to sign your child up for a dozen new activities or attempt to manufacture a completely different résumé. At this stage, every decision needs to be focused on strengthening what exists, improving what can still change, and targeting opportunities where your child can compete.",
+        "You do not have time to guess your way through the process — but you still have time to act strategically."
       ],
-      focus: ['Urgent positioning', 'Build your narrative now', 'Target achievable scholarships']
+      emailSubject: "It is not too late—but every next move matters",
+      introParas: [
+        "This result may have confirmed a concern you were already carrying.",
+        "You know your child has potential, but you may not see enough leadership, service, initiative, organization, relationships, or direction in their current profile. And with senior year approaching, the pressure to “fix everything” can become overwhelming.",
+        "You do not need to fix everything.",
+        "You need to identify the changes most likely to improve your child's position, and avoid wasting time on activities and opportunities that will not."
+      ],
+      introBullets: [],
+      nextSteps: [
+        { title: "Amplify what is already strong.", body: "This is not the time to reinvent your child. Identify their best existing qualities, commitments, experiences, and relationships and build from there." },
+        { title: "Improve what can still change.", body: "Prioritize academic performance, deeper contribution, authentic leadership, stronger organization, and closer relationships with potential recommenders." },
+        { title: "Begin developing the story.", body: "Help your child identify the experiences that reveal their character, growth, contribution, and future direction." },
+        { title: "Build a financially strategic opportunity list.", body: "Target colleges and scholarships that have already admitted, supported, or rewarded students with comparable profiles." }
+      ],
+      whatThisMeans: [
+        "You are not powerless, and you do not have to carry this process alone.",
+        "But this is the stage when free-floating advice, late-night searches, and giant scholarship databases can cost you precious time.",
+        "You need expert diagnosis, clear priorities, and a customized path toward the opportunities most likely to produce real value."
+      ],
+      offer: {
+        heading: "Your recommended next step: SCHOLAR Prep",
+        paragraphs: [
+          "SCHOLAR Prep will help you determine:"
+        ],
+        bullets: [
+          "What can realistically be strengthened before applications begin",
+          "Which parts of your child's profile deserve immediate attention",
+          "How to assemble their College and Scholarship Team",
+          "Which scholarships and colleges are appropriate targets",
+          "How to begin building the stories, recommendations, and application strategy they will need"
+        ],
+        cta: "Explore SCHOLAR Prep"
+      }
     },
     mid: {
-      emoji: '🟡', label: 'On Track… But Leaving Money on the Table',
-      paragraphs: [
-        "Your child has strong potential—but time is limited.",
-        "At this stage, it's not about adding more activities. It's about positioning what already exists in a way that scholarship committees value."
+      label: 'Strong Potential, Limited Time',
+      heading: "Your Child Has Potential—but Potential Must Now Become Positioning",
+      summary: [
+        "Your child has built several important pieces of a competitive profile. They may have good grades, meaningful activities, service, strong character, or trusted relationships with adults.",
+        "But in 11th grade, potential is no longer enough.",
+        "The question is whether those pieces can be refined and positioned in time for colleges and scholarship committees to recognize their value.",
+        "You may already feel the pressure building. Senior year is approaching, scholarship information is coming from every direction, and you do not want to discover too late that another family knew something you did not.",
+        "This is not the time to make your child busier or turn your home into a college-preparation command center.",
+        "It is time to reduce the noise, identify what matters, and pursue the right opportunities with precision."
       ],
-      focus: ['Strategic positioning', 'Narrative building', 'Focused urgency']
+      emailSubject: "Your child has the pieces — now they need a clear strategy",
+      introParas: [
+        "Your child is neither starting from scratch nor fully positioned.",
+        "That makes this a high-potential moment — but also a time-sensitive one.",
+        "Without a clear strategy, your child's strongest qualities may remain disconnected. Colleges may see the activities but miss the contribution. Scholarship committees may see the grades but miss the story. Recommenders may like your child but lack the evidence to write a powerful letter.",
+        "Your next moves should help all of those pieces work together."
+      ],
+      introBullets: [],
+      nextSteps: [
+        { title: "Diagnose the strongest and weakest profile areas.", body: "Determine what should be emphasized, what can still be strengthened, and what no longer deserves your family's time." },
+        { title: "Build the College and Scholarship Team.", body: "Identify the adults who can advocate, recommend, guide, provide information, and help your child remain accountable." },
+        { title: "Document value and impact.", body: "Record what your child has accomplished, contributed, improved, learned, and influenced—not merely the activities they attended." },
+        { title: "Begin essay development now.", body: "Your child needs time to uncover and develop strong stories before application deadlines create unnecessary stress." },
+        { title: "Target the right money.", body: "Research scholarship categories and colleges that align with your child's strengths, experiences, location, interests, and future goals." }
+      ],
+      whatThisMeans: [
+        "You are a discerning parent. You do not need more information thrown at you.",
+        "You need someone who can distinguish what is important from what is merely available.",
+        "A sophisticated scholarship strategy should save your family time, reduce decision fatigue, and show you where real opportunities may exist for your child."
+      ],
+      offer: {
+        heading: "Your recommended next step: SCHOLAR Prep",
+        paragraphs: [
+          "SCHOLAR Prep turns your child's potential into a focused preparation plan—so you know what to strengthen, which opportunities to target, and how to prepare for the application season ahead."
+        ],
+        bullets: [],
+        cta: "Explore SCHOLAR Prep"
+      }
     },
     high: {
-      emoji: '🟢', label: 'Emerging Scholarship Magnet',
-      paragraphs: [
-        "Your child is well-positioned—but this is where most families still miss out.",
-        "Why? Because they don't translate their child's experiences into a compelling story that attracts funding."
+      label: 'Qualified, but Not Yet Fully Positioned',
+      heading: "Your Child Has Done the Work. Now Make Sure the Right Institutions See Their Value.",
+      summary: [
+        "Your child is entering the final stage before senior year with evidence of academic strength, leadership, service, initiative, strong character, and meaningful contribution.",
+        "That is an accomplishment—and it gives your family valuable options.",
+        "But this is also where strong families can make expensive assumptions.",
+        "They believe that because their child has done everything “right,” colleges and scholarship organizations will automatically recognize that work and offer significant money.",
+        "Unfortunately, a qualified student is not always a strategically positioned student.",
+        "Scholarship committees are not simply rewarding what your child has already accomplished. They are deciding whether to invest in who your child is becoming and the difference they may make in the future.",
+        "Your child has the qualifications. Now execution, storytelling, school selection, and strategic fit will determine how effectively those qualifications translate into opportunity."
       ],
-      focus: ['Optimization', 'Story development', 'Maximize funding']
+      emailSubject: "Your child is ready to compete — but qualification is only the beginning",
+      introParas: [
+        "Your child's high SCHOLAR Score confirms something important: they have built a profile with significant scholarship potential.",
+        "Now your family must protect that potential from the mistakes qualified students make every year:"
+      ],
+      introBullets: [
+        "Applying to colleges that admire them but will not adequately fund them",
+        "Chasing scholarships that do not match their profile",
+        "Submitting essays that list accomplishments without revealing purpose",
+        "Receiving generic recommendations from adults who lack useful information",
+        "Assuming strong credentials will speak for themselves"
+      ],
+      nextSteps: [
+        { title: "Refine your child's narrative.", body: "Connect their experiences, values, contributions, intellectual interests, and future vision into a story others can understand and remember." },
+        { title: "Identify institutions likely to invest.", body: "Build a college list based on academic fit, scholarship potential, institutional generosity, and your family's financial priorities." },
+        { title: "Curate the scholarship list.", body: "Focus on opportunities aligned with your child's actual strengths, experiences, location, identity, interests, and future plans." },
+        { title: "Prepare recommendation support.", body: "Give recommenders the stories, examples, and evidence they need to describe your child as more than “a pleasure to have in class.”" },
+        { title: "Begin deliberate execution.", body: "Create the timeline, systems, and writing preparation necessary to submit strong applications without unnecessary family chaos." }
+      ],
+      whatThisMeans: [
+        "You have raised a strong student. Now you want to help them become a well-positioned SCHOLAR.",
+        "You are not trying to prove that you are a good parent by sacrificing your savings, retirement, peace, or future. You are making sure your child's hard work creates more choices for both of you.",
+        "You want to experience the pride of seeing your child recognized for who they have become — and the relief of knowing your family approached college with a sophisticated financial strategy."
+      ],
+      offer: {
+        heading: "Your recommended next step: SCHOLAR Prep",
+        paragraphs: [
+          "SCHOLAR Prep helps you connect your child's profile to the institutions and opportunities most likely to value it.",
+          "Together, the process helps you clarify:"
+        ],
+        bullets: [
+          "Your child's most valuable competitive strengths",
+          "Their best-fit Scholarship Categories",
+          "Their College and Scholarship Team",
+          "The experiences and stories their applications should emphasize",
+          "The colleges and scholarships that deserve their effort",
+          "The systems needed to execute without last-minute panic"
+        ],
+        cta: "Explore SCHOLAR Prep"
+      }
     }
   }
 };
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 //  Quiz state
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 let currentIndex  = 0;
 let selectedValue = null;
 let grade         = null;
 let totalScore    = 0;
 let allAnswers    = {};
 
-// ── Kick off ─────────────────────────────────────────────
+// ── Kick off ────────────────────────────────────────────────────
 renderQuestion();
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 //  Helpers
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 function getTier(score) {
   if (score <= 24) return 'low';
   if (score <= 42) return 'mid';
@@ -688,49 +1079,70 @@ function getResult() {
   return RESULTS[grade][getTier(totalScore)];
 }
 
-// ═══════════════════════════════════════════════════════════
+// Count-up animation for the score reveal
+function animateCount(el, target, duration) {
+  const start = performance.now();
+  (function tick(now) {
+    const p    = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3); // cubic ease-out
+    el.textContent = Math.round(ease * target);
+    if (p < 1) requestAnimationFrame(tick);
+  })(performance.now());
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  Render a question
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 function renderQuestion() {
-  const q     = QUESTIONS[currentIndex];
-  const total = QUESTIONS.length;
-  const pct   = Math.round((currentIndex / total) * 100);
+  const q      = QUESTIONS[currentIndex];
+  const total  = QUESTIONS.length;
+  const pct    = Math.round((currentIndex / total) * 100);
+  const padded = String(currentIndex + 1).padStart(2, '0');
   const letters = ['A', 'B', 'C', 'D', 'E'];
 
   // Progress
-  document.getElementById('prog-label').textContent = `Question ${currentIndex + 1} of ${total}`;
+  document.getElementById('prog-label').textContent = `${padded} / ${String(total).padStart(2, '0')}`;
   document.getElementById('prog-pct').textContent   = `${pct}%`;
   document.getElementById('prog-fill').style.width  = `${pct}%`;
 
-  // Question text
+  // Section + question
   document.getElementById('q-section').textContent = q.section;
   document.getElementById('q-text').textContent    = q.text;
 
   // Button label
   const isLast = currentIndex === QUESTIONS.length - 1;
-  document.getElementById('btn-next').textContent = isLast ? 'See My Results →' : 'Next →';
-  document.getElementById('btn-next').disabled    = true;
+  const btn    = document.getElementById('btn-next');
+  btn.textContent = isLast ? 'See My Results' : 'Continue';
+  btn.disabled    = true;
 
-  // Options
+  // Options — built with stagger index
   const container = document.getElementById('q-options');
   container.innerHTML = '';
   q.options.forEach((opt, i) => {
     const div = document.createElement('div');
     div.className = 'option';
+    div.style.setProperty('--i', i);
     div.innerHTML = `
-      <div class="option-letter">${letters[i]}</div>
-      <div class="option-text">${opt.label}</div>
+      <div class="opt-letter">${letters[i]}</div>
+      <div class="opt-text">${opt.label}</div>
     `;
     div.addEventListener('click', () => selectOption(div, opt.value));
     container.appendChild(div);
   });
 
+  // Trigger slide-in animation
+  const body = document.getElementById('q-body');
+  body.classList.remove('anim-in');
+  void body.offsetHeight; // force reflow
+  body.classList.add('anim-in');
+
   selectedValue = null;
+  requestAnimationFrame(sendHeight);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  Handle option selection
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  Select an option
+// ═══════════════════════════════════════════════════════════════
 function selectOption(el, value) {
   document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
@@ -738,15 +1150,13 @@ function selectOption(el, value) {
   document.getElementById('btn-next').disabled = false;
 }
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 //  Advance to next question
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 function nextQuestion() {
   if (selectedValue === null) return;
 
   const q = QUESTIONS[currentIndex];
-
-  // Store answer
   allAnswers[q.id] = selectedValue;
 
   if (q.isGrade) {
@@ -764,78 +1174,231 @@ function nextQuestion() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 //  Show result screen
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 function showResult() {
   document.getElementById('screen-q').classList.add('hidden');
   document.getElementById('screen-result').classList.remove('hidden');
 
-  const result = getResult();
   const tier   = getTier(totalScore);
-
-  // Badge / category / score line
-  document.getElementById('r-emoji').textContent    = result.emoji;
-  document.getElementById('r-category').textContent = result.label;
-
+  const result = getResult();
   const rangeMap = { low: '12–24', mid: '25–42', high: '43–60' };
-  document.getElementById('r-scoreline').textContent =
-    `Score: ${totalScore} / 60  ·  Range: ${rangeMap[tier]}  ·  Grade: ${grade}`;
 
-  // Message card
-  const card = document.getElementById('r-card');
-  const paras = result.paragraphs.map(p => `<p>${p}</p>`).join('');
-  const items = result.focus.map(f => `<li>${f}</li>`).join('');
-  card.innerHTML = `
-    ${paras}
-    <div class="focus-heading">👉 Focus Areas</div>
-    <ul class="focus-list">${items}</ul>
-  `;
+  // Tier badge (CSS color class — no emoji)
+  const tierEl = document.getElementById('r-tier');
+  tierEl.className    = `tier-badge tier-${tier}`;
+  tierEl.textContent  = result.label;
+
+  // Animated score count-up
+  animateCount(document.getElementById('r-score-num'), totalScore, 900);
+
+  // Score caption
+  document.getElementById('r-score-cap').textContent =
+    `out of 60 points  ·  range ${rangeMap[tier]}  ·  grade ${grade}`;
+
+  // Category heading
+  document.getElementById('r-category').textContent = result.heading;
+
+  // Segment One — the immediate result, shown in full on screen
+  document.getElementById('r-card').innerHTML = result.summary.map(p => `<p>${p}</p>`).join('');
+
+  deliverReport(result);
+
+  requestAnimationFrame(sendHeight);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  Submit to Supabase
-// ═══════════════════════════════════════════════════════════
-async function submitResult() {
-  const name  = document.getElementById('inp-name').value.trim();
-  const email = document.getElementById('inp-email').value.trim();
-  const errEl = document.getElementById('form-error');
+// ═══════════════════════════════════════════════════════════════
+//  Sales pages linked from the report's closing offer block.
+//  A null URL falls back to SITE_URL so no report ever links to a 404.
+// ═══════════════════════════════════════════════════════════════
+const SITE_URL = 'https://www.capturegreatness.org';
 
-  if (!name || !email || !email.includes('@')) {
-    errEl.style.display = 'block';
-    return;
-  }
-  errEl.style.display = 'none';
+const OFFER_URLS = {
+  scholarsGetDollars: 'https://www.capturegreatness.org/scholars-get-dollars',
+  // TODO: SCHOLAR Prep page not built yet. This is the offer in 6 of the 9
+  // report variants (all of 9th–10th and 11th grade), so set it as soon as
+  // the page exists — until then those reports fall back to the site root.
+  scholarPrep: null
+};
 
-  const btn = document.getElementById('btn-submit');
-  btn.disabled    = true;
-  btn.textContent = 'Saving…';
+// Logo must be a public URL — email clients can't read local files.
+// This is the same asset the Kajabi site header serves from their CDN.
+const LOGO_URL = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2159888204/settings_images/fa54718-861-d5d-d254-7480d10e0c6f_Capture-Greatness_Final_Logo_1_300-copy-2-1-2048x1024_1_.png';
 
-  const result = getResult();
+// Capture Greatness brand palette (from Brand Assets/CG Color Palette.png)
+const BRAND = {
+  navy:  '#2A5265',
+  teal:  '#18919F',
+  berry: '#9B3157',
+  ink:   '#2A5265',
+  body:  '#44585F',
+  muted: '#6E828B',
+  panel: '#F1F6F8',
+  line:  '#CAD5DB',
+  paper: '#FFFFFF'
+};
+
+const GRADE_LABELS = {
+  '7th-8th':  '7th–8th Grade',
+  '9th-10th': '9th–10th Grade',
+  '11th':     '11th Grade'
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  Full report — Segment One + Segment Two as email-ready HTML.
+//  Styles must be inline: email clients strip <style> blocks and
+//  external CSS, and web fonts don't load, so this uses a
+//  web-safe stack rather than the widget's brand faces.
+// ═══════════════════════════════════════════════════════════════
+function buildReportText(result) {
+  const FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+  const { navy, teal, berry, ink, body, muted, panel, line, paper } = BRAND;
+
+  const para    = t => `<p style="margin:0 0 15px;font-family:${FONT};font-size:16px;line-height:1.7;color:${body};">${t}</p>`;
+  const eyebrow = t => `<p style="margin:0 0 14px;font-family:${FONT};font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${teal};">${t}</p>`;
+  const bullets = items => `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 16px;">`
+    + items.map(b =>
+        `<tr>`
+        + `<td valign="top" width="18" style="padding:0 0 9px;font-family:${FONT};font-size:16px;line-height:1.6;color:${teal};">&bull;</td>`
+        + `<td valign="top" style="padding:0 0 9px;font-family:${FONT};font-size:16px;line-height:1.6;color:${body};">${b}</td>`
+        + `</tr>`).join('')
+    + `</table>`;
+  const rule = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:26px 0;">`
+    + `<tr><td style="height:1px;line-height:1px;font-size:0;background:${line};">&nbsp;</td></tr></table>`;
+
+  // Content column, assembled first, then wrapped in the branded shell.
+  const col = [];
+
+  // ── Segment One — headline + immediate result ──
+  col.push(`<h1 style="margin:0 0 20px;font-family:${FONT};font-size:25px;line-height:1.3;font-weight:bold;color:${ink};">${result.heading}</h1>`);
+  result.summary.forEach(s => col.push(para(s)));
+
+  col.push(rule);
+
+  // ── Segment Two — framing ──
+  result.introParas.forEach(s => col.push(para(s)));
+  if (result.introBullets.length) col.push(bullets(result.introBullets));
+
+  // ── Next steps — numbered, each in its own row ──
+  col.push(`<div style="height:8px;line-height:8px;font-size:0;">&nbsp;</div>`);
+  col.push(eyebrow('Your next steps'));
+  col.push(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">`
+    + result.nextSteps.map((step, i) =>
+        `<tr>`
+        + `<td valign="top" width="34" style="padding:0 12px 20px 0;">`
+          + `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>`
+          + `<td align="center" width="28" height="28" style="background:${teal};border-radius:14px;`
+          + `font-family:${FONT};font-size:13px;font-weight:bold;color:#ffffff;line-height:28px;">${i + 1}</td>`
+          + `</tr></table>`
+        + `</td>`
+        + `<td valign="top" style="padding:0 0 20px;">`
+          + `<p style="margin:0 0 5px;font-family:${FONT};font-size:16px;line-height:1.45;font-weight:bold;color:${ink};">${step.title}</p>`
+          + `<p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.7;color:${body};">${step.body}</p>`
+        + `</td></tr>`).join('')
+    + `</table>`);
+
+  // ── What this means for you — set apart in a tinted panel ──
+  col.push(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:14px 0 0;">`
+    + `<tr><td style="background:${panel};padding:24px 26px;">`
+    + eyebrow('What this means for you')
+    + result.whatThisMeans.map(s =>
+        `<p style="margin:0 0 13px;font-family:${FONT};font-size:16px;line-height:1.7;color:${body};">${s}</p>`).join('')
+    + `</td></tr></table>`);
+
+  // ── Closing offer — the one place the berry accent is spent ──
+  const url = (/scholar prep/i.test(result.offer.heading)
+    ? OFFER_URLS.scholarPrep
+    : OFFER_URLS.scholarsGetDollars) || SITE_URL;
+
+  col.push(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:28px 0 0;">`
+    + `<tr><td style="background:${navy};padding:28px 26px;">`
+      + `<p style="margin:0 0 10px;font-family:${FONT};font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#8FBFCB;">Your recommended next step</p>`
+      + `<p style="margin:0 0 14px;font-family:${FONT};font-size:20px;line-height:1.35;font-weight:bold;color:#ffffff;">${result.offer.heading.replace(/^Your recommended next step:\s*/i, '')}</p>`
+      + result.offer.paragraphs.map(t =>
+          `<p style="margin:0 0 13px;font-family:${FONT};font-size:15px;line-height:1.65;color:#D6E4EA;">${t}</p>`).join('')
+      + (result.offer.bullets.length
+          ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 16px;">`
+            + result.offer.bullets.map(b =>
+                `<tr>`
+                + `<td valign="top" width="18" style="padding:0 0 8px;font-family:${FONT};font-size:15px;line-height:1.6;color:#8FBFCB;">&bull;</td>`
+                + `<td valign="top" style="padding:0 0 8px;font-family:${FONT};font-size:15px;line-height:1.6;color:#D6E4EA;">${b}</td>`
+                + `</tr>`).join('')
+            + `</table>`
+          : '')
+      + `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;">`
+        + `<tr><td align="center" style="background:${berry};border-radius:4px;">`
+        + `<a href="${url}" style="display:inline-block;padding:15px 30px;font-family:${FONT};font-size:13px;`
+        + `font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;color:#ffffff;text-decoration:none;">`
+        + `${result.offer.cta}</a></td></tr></table>`
+    + `</td></tr></table>`);
+
+  // ── Branded shell: logo header, navy score band, content, footer ──
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${panel};">`
+    + `<tr><td align="center" style="padding:0;">`
+    + `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:640px;background:${paper};">`
+
+      // Logo — needs a light backdrop, the wordmark is dark navy
+      + `<tr><td align="center" style="background:${paper};padding:30px 24px 24px;">`
+        + `<img src="${LOGO_URL}" alt="Capture Greatness" width="210" `
+        + `style="display:block;width:210px;max-width:60%;height:auto;border:0;" />`
+      + `</td></tr>`
+
+      // Score band — the hero
+      + `<tr><td style="background:${navy};padding:24px 28px;">`
+        + `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>`
+        + `<td valign="middle" style="font-family:${FONT};">`
+          + `<span style="font-size:40px;font-weight:bold;color:#ffffff;line-height:1;">${totalScore}</span>`
+          + `<span style="font-size:16px;color:#8FBFCB;"> / 60</span>`
+        + `</td>`
+        + `<td valign="middle" align="right" style="font-family:${FONT};">`
+          + `<p style="margin:0 0 3px;font-size:15px;font-weight:bold;color:#ffffff;line-height:1.35;">${result.label}</p>`
+          + `<p style="margin:0;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#8FBFCB;">${GRADE_LABELS[grade] || grade}</p>`
+        + `</td>`
+        + `</tr></table>`
+      + `</td></tr>`
+
+      // Accent hairline under the band
+      + `<tr><td style="height:3px;line-height:3px;font-size:0;background:${teal};">&nbsp;</td></tr>`
+
+      // Body
+      + `<tr><td style="padding:32px 28px 34px;">${col.join('\n')}</td></tr>`
+
+      // Footer
+      + `<tr><td style="background:${panel};padding:20px 28px;border-top:1px solid ${line};">`
+        + `<p style="margin:0;font-family:${FONT};font-size:12px;line-height:1.6;color:${muted};">`
+        + `Capture Greatness &middot; Scholarship &amp; College Coaching<br />`
+        + `You're receiving this because you completed the Scholarship Readiness Assessment.</p>`
+      + `</td></tr>`
+
+    + `</table></td></tr></table>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Deliver report — identity came from the URL via the opt-in
+//  landing page, so it is expected to already be present here
+// ═══════════════════════════════════════════════════════════════
+async function deliverReport(result) {
+  const noticeEl = document.getElementById('email-notice');
+
+  noticeEl.textContent = "Check your email for your recommended next steps.";
 
   const { error } = await db.from('quiz_submissions').insert({
-    name,
-    email,
+    name:            contactName,
+    email:           contactEmail,
     grade,
-    total_score:      totalScore,
-    result_category:  getTier(totalScore),          // 'low' | 'mid' | 'high'
-    result_label:     result.label,                 // human-readable
-    q13_answer:       allAnswers['q13'] ?? null,     // reflection only
-    answers:          allAnswers                     // full answer map
+    total_score:     totalScore,
+    result_category: getTier(totalScore),
+    result_label:    result.label,
+    report_subject:  result.emailSubject,
+    report_text:     buildReportText(result),
+    q13_answer:      allAnswers['q13'] ?? null,
+    answers:         allAnswers
   });
 
   if (error) {
     console.error('Supabase error:', error);
-    btn.disabled    = false;
-    btn.textContent = 'Get My Action Plan →';
-    errEl.textContent = 'Something went wrong. Please try again.';
-    errEl.style.display = 'block';
-    return;
   }
-
-  // Success — show thank-you
-  document.getElementById('screen-result').classList.add('hidden');
-  document.getElementById('screen-ty').classList.remove('hidden');
 }
 </script>
 </body>
