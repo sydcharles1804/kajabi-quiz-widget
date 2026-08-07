@@ -72,13 +72,14 @@
     }
 
     /* ── Shell ───────────────────────────────────────────────────────
-       Full-bleed by design: this is meant to fill an iframe embedded
-       directly in a page, not sit as a floating card on its own, so
-       there's no border, no radius, and only a hairline shadow left
-       for the faintest lift. ────────────────────────────────────── */
+       Full-bleed by design: fills whatever iframe it's embedded in,
+       so no max-width and no border-radius. A hairline border and a
+       near-invisible shadow are kept to give it a faint edge against
+       the page it's embedded in, without reading as a floating card. */
     .widget {
       background: var(--paper);
       width: 100%;
+      border: 1px solid var(--line);
       overflow: hidden;
       box-shadow: var(--shadow);
     }
