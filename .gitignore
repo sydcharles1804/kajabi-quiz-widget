@@ -12,6 +12,9 @@ Thumbs.db
 *.bak
 *.stackdump
 
+# Netlify build output
+dist/
+
 # Research scratch (scraped docs, search results — not project deliverables)
 .firecrawl/
 

@@ -79,3 +79,13 @@ Two things worth being clear about:
 - **Use the publishable key (`sb_publishable_…`), never the service role key.** The service role key bypasses RLS entirely and would expose every submission if it reached the browser.
 
 **Deployment implication:** the widget is no longer a single self-contained file — it loads `./config.js` relative to itself. Wherever it's hosted, that file must sit alongside it, and it will not work if the HTML is pasted somewhere without it.
+
+## Deploying (Netlify)
+
+`build.js` + `netlify.toml` handle this: the build assembles `dist/` from the tracked sources and writes `dist/config.js` from the `SUPABASE_URL` and `SUPABASE_KEY` environment variables set in Netlify. Credentials therefore live in Netlify's encrypted env settings and never enter git.
+
+- **Only `index.html`, `quiz-widget.html`, and `fonts/` are published.** `CLAUDE.md`, the report-copy source docs, the n8n workflow, and `Brand Assets/` are deliberately excluded so internal material isn't served publicly. If the widget ever needs a new asset, add it to `FILES`/`DIRS` in `build.js` or it will 404 in production.
+- **The build fails loudly** when the env vars are missing, or when `SUPABASE_KEY` isn't a `sb_publishable_…` key. That's intentional: a silent success would publish a quiz that appears to work but saves nothing, and a service-role key would bypass RLS entirely.
+- **`dist/` is gitignored** — it's generated output, never committed.
+
+**GitHub Pages also serves this repo** at `sydcharles1804.github.io/kajabi-quiz-widget/`, but it has no build step, so `config.js` 404s there and submissions silently fail. Either disable Pages or ignore that URL — Netlify is the real deployment.
