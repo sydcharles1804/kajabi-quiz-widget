@@ -10,6 +10,10 @@ Thumbs.db
 # Temp
 *.tmp
 *.bak
+*.stackdump
+
+# Research scratch (scraped docs, search results — not project deliverables)
+.firecrawl/
 
 # ── NEVER commit these — they contain live Supabase credentials ──
 quiz-widget.html
