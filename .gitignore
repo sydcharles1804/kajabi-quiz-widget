@@ -15,6 +15,7 @@ Thumbs.db
 # Research scratch (scraped docs, search results — not project deliverables)
 .firecrawl/
 
-# ── NEVER commit these — they contain live Supabase credentials ──
-quiz-widget.html
-index.html
+# ── Credentials ──
+# All secrets live in config.js and nowhere else. Never commit it, and
+# never paste live values into quiz-widget.html or config.example.js.
+config.js

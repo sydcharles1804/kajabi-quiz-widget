@@ -15,8 +15,10 @@ No build/lint/test commands exist. To check a change:
 
 ## File architecture
 
-- **`quiz-widget.html`** — the live, working widget. Self-contained: inlined CSS, local `@font-face` fonts loaded from `fonts/`, and the full quiz logic in one `<script>` block. Contains the **live Supabase project URL and anon key**. This is the file that actually gets deployed/embedded.
-- **`quiz-widget.template.html`** — a sanitized, shareable starting-point copy of the same widget, with placeholder credentials (`YOUR_SUPABASE_URL` / `YOUR_SUPABASE_ANON_KEY`) and no local font-face rules. Not the deployed file — don't confuse the two when making content/styling changes; changes usually need to land in `quiz-widget.html`, and should generally be mirrored into the template if they're structural (not credential-related).
+- **`quiz-widget.html`** — the live, working widget and the file that gets deployed/embedded. Inlined CSS, local `@font-face` fonts from `fonts/`, and the full quiz logic in one `<script>` block. Holds **no credentials** — it reads them from `window.QUIZ_CONFIG`, so it is safe to track.
+- **`config.js`** — the only file holding live credentials, and the only one gitignored. Created by copying `config.example.js`. A fresh clone will not have it, and the widget logs a clear console error and skips submission (rather than crashing) when it's missing.
+- **`config.example.js`** — tracked placeholder version of the above; the setup instructions live in its header comment.
+- **`quiz-widget.template.html`** — **redundant, and a known drift hazard.** It existed only to provide a credential-free copy of the widget back when `quiz-widget.html` was gitignored. Now that the widget itself is tracked, this file duplicates it with no benefit and will silently fall out of date (it already did once, losing an entire session's work from the repo). Safe to delete; if you keep it, re-sync it on every widget change.
 - **`index.html`** — a bare meta-refresh redirect to `quiz-widget.html`, for a plain top-level hosting path.
 - **`REQUIRED QUESTION (FIRST).md`** and **`.txt`** — identical copies of the source content spec (question bank, scoring rubric per answer, and the grade × score-tier result copy). This is the spec that `quiz-widget.html`'s `QUESTIONS` and `RESULTS` JS objects were transcribed from — if the quiz copy or scoring changes, treat this as the source of truth to update first, then sync into the widget's JS objects.
 - **`fonts/`** — local `.ttf` files (BricolageGrotesque, WorkSans, IBMPlexMono) referenced by `@font-face` in `quiz-widget.html` only.
@@ -69,4 +71,11 @@ Design decisions, so future changes don't accidentally re-open settled questions
 
 ## Credentials note
 
-`quiz-widget.html` embeds a live Supabase URL and anon key and is **not tracked by git** — it's excluded via `.gitignore` and has never been committed (only `quiz-widget.template.html`, with placeholder credentials, is in history). Keep it that way: never `git add -f` it, and don't paste the live key into `quiz-widget.template.html` or any other tracked file.
+All secrets live in **`config.js` and nowhere else**. It is the single gitignored file; everything else in the repo is safe to commit. Never paste live values into `quiz-widget.html`, `config.example.js`, or any other tracked file, and never `git add -f config.js`.
+
+Two things worth being clear about:
+
+- **This protects git history, not the browser.** The Supabase publishable key is served to every visitor and is readable in devtools — that is inherent to any client-side key, not a flaw in this setup. What actually constrains it is the RLS policy on `quiz_submissions` (INSERT only, no SELECT), so a leaked key can add rows but never read anyone's submissions. If the key ever needs rotating, that's a dashboard action plus a one-line edit to `config.js`.
+- **Use the publishable key (`sb_publishable_…`), never the service role key.** The service role key bypasses RLS entirely and would expose every submission if it reached the browser.
+
+**Deployment implication:** the widget is no longer a single self-contained file — it loads `./config.js` relative to itself. Wherever it's hosted, that file must sit alongside it, and it will not work if the HTML is pasted somewhere without it.
