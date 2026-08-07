@@ -38,8 +38,9 @@ No build/lint/test commands exist. To check a change:
 The "full report" promised by the on-screen "check your email" notice is **not** sent by this widget — none of the pipeline below lives in this repo; it's Supabase dashboard config + an n8n workflow + Kajabi config, documented here only for reference.
 
 ```
-Supabase Database Webhook (on INSERT into quiz_submissions)
-        ▼
+Supabase trigger on_quiz_submission_created (AFTER INSERT on quiz_submissions)
+        ▼  net.http_post → https://n8n.dexiamedia.com/webhook/kajabi-quiz-report
+        ▼  body: {type, table, record:{...the full row...}}
 n8n: Webhook trigger node → HTTP Request node
         ▼  POST https://www.capturegreatness.org/forms/2149687265/form_submissions
         ▼  (form-urlencoded, NO authentication of any kind)
@@ -58,6 +59,7 @@ Design decisions, so future changes don't accidentally re-open settled questions
 - **Custom field slots are per-site IDs, not a 3-slot cap.** The Public API reference showing `custom_1`/`custom_2`/`custom_3` is illustrative only — real numbering reflects site-wide custom field IDs (hence this form starting at `custom_3`), and Kajabi allows up to 50 custom fields per site. If more fields are ever needed (e.g. restoring `report_subject` for a per-tier dynamic subject line), add them to the Form and read the new names from `embed.js`.
 - **One generic Kajabi email template, not nine.** The 9 grade×tier variants of report copy live in exactly one place — `RESULTS` in `quiz-widget.html` — flattened by `buildReportText()` into the row's `report_text` column. Kajabi never re-implements the copy/branching logic; it just merge-tags in whatever text arrives. (This was an explicit choice over building 9 separate Kajabi templates + tag-triggered automations, to avoid the content drifting out of sync between two places.)
 - **Form `2149687265` currently has no Name field**, so `contactName` is not passed through. Add a Name field to the Form (and a matching `form_submission[name]` parameter in the n8n node) if the email template needs to greet the parent by name.
+- **The Supabase → n8n hop is a plain SQL trigger, not a dashboard "Database Webhook."** `public.notify_quiz_submission()` (SECURITY DEFINER, `search_path = ''`) calls `net.http_post` from the `pg_net` extension, fired by the `on_quiz_submission_created` AFTER INSERT trigger. It was created via migration `add_quiz_submission_webhook_trigger`, so it lives in Supabase's migration history rather than only in dashboard config. `pg_net` is async and fire-and-forget: a failing n8n endpoint will **not** fail or roll back the insert, so the row is always saved even if delivery breaks. To debug delivery, query `net._http_response` (most recent first) — it records the status code and body n8n returned. The n8n webhook node replies `200 {"message":"Workflow was started"}` immediately on receipt, so a 200 there confirms only that n8n *accepted* the call, not that the Kajabi submission downstream succeeded.
 
 ## Credentials note
 
