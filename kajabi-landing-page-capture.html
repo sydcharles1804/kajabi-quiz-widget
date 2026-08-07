@@ -15,13 +15,24 @@
   before then. Server-side tests showed the parameter present at every
   hop, so this is not reproducible outside a browser.
 
-  Rather than depend on that chain, this stashes the submitted email in
+  Rather than depend on that chain, this stashes the address in
   localStorage. The thank-you page reads it back when ?email= is
   missing (see kajabi-thank-you-page-embed.html). Both pages are on
   capturegreatness.org, so same-origin storage applies.
 
-  This is a fallback, not a replacement — if Kajabi's parameter does
-  arrive, the thank-you page prefers it.
+  WHY IT CAPTURES ON TYPING, NOT ON SUBMIT
+  An earlier version hooked the form's submit event and never fired:
+  Kajabi intercepts submission with its own JavaScript (Parsley
+  validation plus a Turbolinks AJAX post), so a native submit event
+  is not guaranteed to reach a listener added here. Reading the field
+  as it is typed removes that dependency entirely — by the time the
+  visitor can click Submit, the value is already stored. The submit
+  and click handlers below are kept only as belt-and-braces.
+
+  VERIFY IT IS WORKING
+  On /sgd, type an address into the form, then open the browser
+  console and run:  localStorage.getItem('cg_quiz_email')
+  It should print the address you typed.
 -->
 
 <script>
@@ -30,47 +41,49 @@
   var NAME_KEY  = 'cg_quiz_name';
   var TIME_KEY  = 'cg_quiz_captured_at';
 
-  function stash(form) {
-    var emailEl = form.querySelector('input[name="form_submission[email]"]');
-    var nameEl  = form.querySelector('input[name="form_submission[name]"]');
-    if (!emailEl || !emailEl.value) return;
+  var EMAIL_SEL = 'input[name="form_submission[email]"]';
+  var NAME_SEL  = 'input[name="form_submission[name]"]';
+
+  function save(key, value) {
     try {
-      localStorage.setItem(EMAIL_KEY, emailEl.value.trim());
-      localStorage.setItem(TIME_KEY, String(Date.now()));
-      if (nameEl && nameEl.value) {
-        localStorage.setItem(NAME_KEY, nameEl.value.trim());
-      } else {
-        localStorage.removeItem(NAME_KEY);
+      if (value && value.trim()) {
+        localStorage.setItem(key, value.trim());
+        localStorage.setItem(TIME_KEY, String(Date.now()));
       }
     } catch (e) {
       /* private browsing or storage disabled — the quiz still runs,
-         it just won't be able to send a report */
+         it just won't be able to deliver a report */
     }
   }
 
-  function wire() {
-    var forms = document.querySelectorAll('form[action*="/form_submissions"]');
-    if (!forms.length) return false;
-    Array.prototype.forEach.call(forms, function (form) {
-      if (form.getAttribute('data-cg-capture')) return;
-      form.setAttribute('data-cg-capture', '1');
-      // Capture phase: run before Kajabi's own submit handler, which
-      // disables the form and may clear the fields.
-      form.addEventListener('submit', function () { stash(form); }, true);
-    });
-    return true;
+  // Capture as the visitor types. Delegated on document in the capture
+  // phase so it works no matter when Kajabi renders the form block, and
+  // regardless of any handler that stops propagation further down.
+  function onInput(e) {
+    var el = e.target;
+    if (!el || !el.name) return;
+    if (el.name === 'form_submission[email]') save(EMAIL_KEY, el.value);
+    else if (el.name === 'form_submission[name]') save(NAME_KEY, el.value);
   }
 
-  // Kajabi renders form blocks after this script may have run, so keep
-  // looking briefly rather than assuming the DOM is ready.
-  if (!wire()) {
-    var tries = 0;
-    var poll = setInterval(function () {
-      if (wire() || ++tries > 40) clearInterval(poll);
-    }, 250);
+  document.addEventListener('input',  onInput, true);
+  document.addEventListener('change', onInput, true);
+
+  // Belt and braces: also sweep the fields on any submit or button
+  // click, in case a password manager or autofill populated them
+  // without firing input events.
+  function sweep() {
+    var email = document.querySelector(EMAIL_SEL);
+    var name  = document.querySelector(NAME_SEL);
+    if (email) save(EMAIL_KEY, email.value);
+    if (name)  save(NAME_KEY,  name.value);
   }
 
-  // Turbolinks swaps pages without a full reload
-  document.addEventListener('turbolinks:load', wire);
+  document.addEventListener('submit', sweep, true);
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t) return;
+    if (t.type === 'submit' || (t.closest && t.closest('[type="submit"]'))) sweep();
+  }, true);
 })();
 </script>
