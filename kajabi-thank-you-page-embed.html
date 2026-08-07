@@ -1,0 +1,56 @@
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  Kajabi thank-you page — quiz embed
+  ═══════════════════════════════════════════════════════════════════
+
+  Paste this into a Custom Code block on the Kajabi page that the
+  opt-in Form redirects to. It is the bridge between the landing page
+  and the quiz.
+
+  WHY A BRIDGE IS NEEDED
+  Kajabi's "Send the contact to a custom thank you page" setting only
+  accepts a Kajabi page from a dropdown — it cannot point at an
+  external URL. So the contact's details land on a Kajabi page first,
+  and this snippet forwards them to the quiz hosted on Netlify.
+
+  SETUP — on the opt-in Form, under After Submission, enable BOTH:
+    1. "Send the contact to a custom thank you page"  -> pick this page
+    2. "Pass submission data to the thank you page"
+  Without #2, Kajabi sends no ?email=/?name= and the quiz cannot
+  deliver a report.
+
+  The quiz reports its rendered height to this page on every layout
+  change (see sendHeight() in quiz-widget.html), so the iframe grows
+  with the content instead of showing an inner scrollbar.
+-->
+
+<iframe id="quiz-frame" src="about:blank"
+        title="Scholarship Readiness Assessment"
+        style="width:100%;border:0;display:block;min-height:600px;"
+        scrolling="no"></iframe>
+
+<script>
+(function () {
+  var QUIZ_ORIGIN = 'https://elaborate-narwhal-5be330.netlify.app';
+  var QUIZ_URL    = QUIZ_ORIGIN + '/quiz-widget.html';
+
+  var incoming = new URLSearchParams(window.location.search);
+  var forward  = new URLSearchParams();
+
+  // Forward only the contact fields the quiz reads
+  if (incoming.get('email')) forward.set('email', incoming.get('email'));
+  if (incoming.get('name'))  forward.set('name',  incoming.get('name'));
+
+  var frame = document.getElementById('quiz-frame');
+  frame.src = QUIZ_URL + (forward.toString() ? '?' + forward.toString() : '');
+
+  // Auto-height. The origin check matters: without it any site could
+  // post fake height messages into this page.
+  window.addEventListener('message', function (e) {
+    if (e.origin !== QUIZ_ORIGIN) return;
+    if (e.data && e.data.type === 'quizHeight' && e.data.height) {
+      frame.style.height = e.data.height + 'px';
+    }
+  });
+})();
+</script>
