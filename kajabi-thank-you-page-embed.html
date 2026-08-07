@@ -1,6 +1,6 @@
 <!--
   ═══════════════════════════════════════════════════════════════════
-  Kajabi thank-you page — quiz embed
+  Kajabi thank-you page (/scholar-score-diagnostic) — quiz embed
   ═══════════════════════════════════════════════════════════════════
 
   Paste this into a Custom Code block on the Kajabi page that the
@@ -16,8 +16,18 @@
   SETUP — on the opt-in Form, under After Submission, enable BOTH:
     1. "Send the contact to a custom thank you page"  -> pick this page
     2. "Pass submission data to the thank you page"
-  Without #2, Kajabi sends no ?email=/?name= and the quiz cannot
-  deliver a report.
+
+  EMAIL SOURCES, IN ORDER OF PREFERENCE
+    1. ?email= on this page's URL (what Kajabi is meant to supply)
+    2. localStorage, stashed by kajabi-landing-page-capture.html
+
+  The fallback exists because in practice Kajabi's redirect arrives
+  with no query string in a real browser: /forms/<id>/thank_you only
+  forwards a query string, it never injects one, and the parameter is
+  lost somewhere in the Turbolinks submit path. Server-side tests show
+  it present at every hop, so it can't be reproduced outside a browser.
+  Without the fallback the quiz runs but no report can be delivered,
+  which is exactly the "no email" symptom.
 
   The quiz reports its rendered height to this page on every layout
   change (see sendHeight() in quiz-widget.html), so the iframe grows
@@ -34,12 +44,32 @@
   var QUIZ_ORIGIN = 'https://elaborate-narwhal-5be330.netlify.app';
   var QUIZ_URL    = QUIZ_ORIGIN + '/quiz-widget.html';
 
-  var incoming = new URLSearchParams(window.location.search);
-  var forward  = new URLSearchParams();
+  var EMAIL_KEY = 'cg_quiz_email';
+  var NAME_KEY  = 'cg_quiz_name';
+  var TIME_KEY  = 'cg_quiz_captured_at';
+  // Only trust a stashed address briefly. On a shared or reused
+  // browser, a stale value would send one family's report to another.
+  var MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 
-  // Forward only the contact fields the quiz reads
-  if (incoming.get('email')) forward.set('email', incoming.get('email'));
-  if (incoming.get('name'))  forward.set('name',  incoming.get('name'));
+  var incoming = new URLSearchParams(window.location.search);
+  var email = incoming.get('email');
+  var name  = incoming.get('name');
+
+  if (!email) {
+    try {
+      var storedAt = parseInt(localStorage.getItem(TIME_KEY) || '0', 10);
+      if (storedAt && (Date.now() - storedAt) < MAX_AGE_MS) {
+        email = localStorage.getItem(EMAIL_KEY) || null;
+        if (!name) name = localStorage.getItem(NAME_KEY) || null;
+      }
+    } catch (e) {
+      /* storage unavailable — fall through with no email */
+    }
+  }
+
+  var forward = new URLSearchParams();
+  if (email) forward.set('email', email);
+  if (name)  forward.set('name', name);
 
   var frame = document.getElementById('quiz-frame');
   frame.src = QUIZ_URL + (forward.toString() ? '?' + forward.toString() : '');

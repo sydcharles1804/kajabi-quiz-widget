@@ -1,0 +1,76 @@
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  Kajabi LANDING PAGE (/sgd) — email capture fallback
+  ═══════════════════════════════════════════════════════════════════
+
+  Paste into a Custom Code block on the landing page that holds the
+  opt-in form.
+
+  WHY THIS EXISTS
+  The quiz needs the visitor's email, and Kajabi is supposed to supply
+  it by appending ?email= when it redirects to the thank-you page.
+  In practice that parameter arrives empty in a real browser: Kajabi's
+  /forms/<id>/thank_you endpoint only forwards a query string, it never
+  injects one, and something in the Turbolinks submit path loses it
+  before then. Server-side tests showed the parameter present at every
+  hop, so this is not reproducible outside a browser.
+
+  Rather than depend on that chain, this stashes the submitted email in
+  localStorage. The thank-you page reads it back when ?email= is
+  missing (see kajabi-thank-you-page-embed.html). Both pages are on
+  capturegreatness.org, so same-origin storage applies.
+
+  This is a fallback, not a replacement — if Kajabi's parameter does
+  arrive, the thank-you page prefers it.
+-->
+
+<script>
+(function () {
+  var EMAIL_KEY = 'cg_quiz_email';
+  var NAME_KEY  = 'cg_quiz_name';
+  var TIME_KEY  = 'cg_quiz_captured_at';
+
+  function stash(form) {
+    var emailEl = form.querySelector('input[name="form_submission[email]"]');
+    var nameEl  = form.querySelector('input[name="form_submission[name]"]');
+    if (!emailEl || !emailEl.value) return;
+    try {
+      localStorage.setItem(EMAIL_KEY, emailEl.value.trim());
+      localStorage.setItem(TIME_KEY, String(Date.now()));
+      if (nameEl && nameEl.value) {
+        localStorage.setItem(NAME_KEY, nameEl.value.trim());
+      } else {
+        localStorage.removeItem(NAME_KEY);
+      }
+    } catch (e) {
+      /* private browsing or storage disabled — the quiz still runs,
+         it just won't be able to send a report */
+    }
+  }
+
+  function wire() {
+    var forms = document.querySelectorAll('form[action*="/form_submissions"]');
+    if (!forms.length) return false;
+    Array.prototype.forEach.call(forms, function (form) {
+      if (form.getAttribute('data-cg-capture')) return;
+      form.setAttribute('data-cg-capture', '1');
+      // Capture phase: run before Kajabi's own submit handler, which
+      // disables the form and may clear the fields.
+      form.addEventListener('submit', function () { stash(form); }, true);
+    });
+    return true;
+  }
+
+  // Kajabi renders form blocks after this script may have run, so keep
+  // looking briefly rather than assuming the DOM is ready.
+  if (!wire()) {
+    var tries = 0;
+    var poll = setInterval(function () {
+      if (wire() || ++tries > 40) clearInterval(poll);
+    }, 250);
+  }
+
+  // Turbolinks swaps pages without a full reload
+  document.addEventListener('turbolinks:load', wire);
+})();
+</script>
