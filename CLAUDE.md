@@ -21,7 +21,7 @@ No build/lint/test commands exist. To check a change:
 - **`REQUIRED QUESTION (FIRST).md`** and **`.txt`** — identical copies of the source content spec (question bank, scoring rubric per answer, and the grade × score-tier result copy). This is the spec that `quiz-widget.html`'s `QUESTIONS` and `RESULTS` JS objects were transcribed from — if the quiz copy or scoring changes, treat this as the source of truth to update first, then sync into the widget's JS objects.
 - **`fonts/`** — local `.ttf` files (BricolageGrotesque, WorkSans, IBMPlexMono) referenced by `@font-face` in `quiz-widget.html` only.
 - **`.firecrawl/capturegreatness.html`** — a scraped snapshot of the "Capture Greatness" Kajabi storefront page (via the firecrawl skill), kept as reference for the site this widget is embedded into. Not part of the widget itself.
-- **`kajabi-quiz-report-delivery.n8n-workflow.json`** — an importable n8n workflow (Webhook trigger → HTTP Request to Kajabi's `POST /v1/forms/{id}/submit`) implementing the "Report delivery" pipeline below. Has two placeholders that must be filled in after import: the Kajabi Form ID in the request URL, and an n8n OAuth2 credential for Kajabi's API (client-credentials grant) — no secrets are stored in this file. Not consumed by `quiz-widget.html` or anything else in this repo; it's config for the separate n8n instance.
+- **`kajabi-quiz-report-delivery.n8n-workflow.json`** — an importable n8n workflow (Webhook trigger → HTTP Request posting to Kajabi's public form-submission endpoint) implementing the "Report delivery" pipeline below. Needs no credentials or placeholders — the endpoint is unauthenticated. Not consumed by `quiz-widget.html` or anything else in this repo; it's config for the separate n8n instance.
 
 ## Widget internals (`quiz-widget.html`)
 
@@ -41,9 +41,9 @@ The "full report" promised by the on-screen "check your email" notice is **not**
 Supabase Database Webhook (on INSERT into quiz_submissions)
         ▼
 n8n: Webhook trigger node → HTTP Request node
-        ▼  POST https://api.kajabi.com/v1/forms/{form_id}/submit
-        ▼  (OAuth2 client-credentials auth — see below)
-Kajabi Form submission (custom_1/2/3 = report_text/grade/result_category)
+        ▼  POST https://www.capturegreatness.org/forms/2149687265/form_submissions
+        ▼  (form-urlencoded, NO authentication of any kind)
+Kajabi Form submission (custom_3/4/5 = report_text/grade/result_category)
         ▼
 Kajabi Automation on that Form: "when submitted → send email"
         (one static-subject transactional template, merge-tagging
@@ -51,9 +51,13 @@ Kajabi Automation on that Form: "when submitted → send email"
 ```
 
 Design decisions, so future changes don't accidentally re-open settled questions:
+
+- **Do NOT use Kajabi's Public API (`api.kajabi.com/v1`) for this.** It requires the Pro plan (or a $25/mo add-on on Basic/Growth), which this account does not have — `app.kajabi.com/admin/settings/public_api` just redirects to general account settings. An earlier version of this pipeline was fully built against `POST /v1/forms/{id}/submit` with OAuth2 client-credentials and had to be abandoned. The "API Key / API Secret" under Settings → Account Details is for the **legacy Zapier integration only** and is rejected by `/v1/oauth/token` with `Invalid client credentials` — it is not a Public API credential.
+- **Use the public form-submission endpoint instead.** Every Kajabi Form has an unauthenticated POST endpoint at `https://<site-domain>/forms/<form_id>/form_submissions`, the same one its public embed posts to. Verified working with no `authenticity_token`, no session cookie, and no auth headers — a bare `application/x-www-form-urlencoded` POST returns `302` to `/thank_you` on success. This works on any plan, since it's the same path a real visitor's browser uses.
+- **Discover a form's real field names from its public embed**, don't guess: `curl https://<site-domain>/forms/<form_id>/embed.js` returns the rendered form markup with exact `name="form_submission[...]"` attributes. For form `2149687265` those are `form_submission[email]`, `form_submission[custom_3]` (Report Text), `form_submission[custom_4]` (Grade), `form_submission[custom_5]` (Tier).
+- **Custom field slots are per-site IDs, not a 3-slot cap.** The Public API reference showing `custom_1`/`custom_2`/`custom_3` is illustrative only — real numbering reflects site-wide custom field IDs (hence this form starting at `custom_3`), and Kajabi allows up to 50 custom fields per site. If more fields are ever needed (e.g. restoring `report_subject` for a per-tier dynamic subject line), add them to the Form and read the new names from `embed.js`.
 - **One generic Kajabi email template, not nine.** The 9 grade×tier variants of report copy live in exactly one place — `RESULTS` in `quiz-widget.html` — flattened by `buildReportText()` into the row's `report_text` column. Kajabi never re-implements the copy/branching logic; it just merge-tags in whatever text arrives. (This was an explicit choice over building 9 separate Kajabi templates + tag-triggered automations, to avoid the content drifting out of sync between two places.)
-- **Kajabi's Public API requires real OAuth2**, not just an API key in the header: `POST https://api.kajabi.com/v1/oauth/token` with `client_id`/`client_secret`/`grant_type=client_credentials` (credentials from Kajabi Settings → Account Details → API Key/Secret). In n8n this is an OAuth2 credential on the HTTP Request node, not a plain header.
-- **Kajabi form submissions only carry 3 generic custom field slots** (`custom_1`/`custom_2`/`custom_3`) via the API, regardless of how many custom fields the Form has. `report_subject` was deliberately dropped from this pipeline for that reason — the email template uses one static subject line instead of a per-tier dynamic one. The 3 slots carry `report_text`, `grade`, `result_category`, in the order the custom fields were added to the Kajabi Form — **this mapping needs a live test submission to confirm**; if `custom_1` doesn't land as `report_text`, fix the mapping in the n8n HTTP Request body, not by reordering the Kajabi Form fields.
+- **Form `2149687265` currently has no Name field**, so `contactName` is not passed through. Add a Name field to the Form (and a matching `form_submission[name]` parameter in the n8n node) if the email template needs to greet the parent by name.
 
 ## Credentials note
 

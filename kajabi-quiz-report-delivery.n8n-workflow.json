@@ -15,77 +15,48 @@
       }
     },
     {
-      "id": "http-kajabi-get-token",
-      "name": "Get Kajabi Access Token",
+      "id": "http-kajabi-form-submission",
+      "name": "Submit to Kajabi Form",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [320, 0],
       "parameters": {
         "method": "POST",
-        "url": "https://api.kajabi.com/v1/oauth/token",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/x-www-form-urlencoded"
-            }
-          ]
-        },
+        "url": "https://www.capturegreatness.org/forms/2149687265/form_submissions",
         "sendBody": true,
         "contentType": "form-urlencoded",
         "bodyParameters": {
           "parameters": [
-            { "name": "grant_type", "value": "client_credentials" },
-            { "name": "client_id", "value": "REPLACE_WITH_YOUR_KAJABI_API_KEY" },
-            { "name": "client_secret", "value": "REPLACE_WITH_YOUR_KAJABI_API_SECRET" }
-          ]
-        },
-        "options": {}
-      }
-    },
-    {
-      "id": "http-kajabi-submit-form",
-      "name": "Submit to Kajabi Form",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [640, 0],
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.kajabi.com/v1/forms/2149687265/submit",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
             {
-              "name": "Content-Type",
-              "value": "application/vnd.api+json"
+              "name": "form_submission[email]",
+              "value": "={{ $json.body.record.email }}"
             },
             {
-              "name": "Authorization",
-              "value": "=Bearer {{ $node[\"Get Kajabi Access Token\"].json.access_token }}"
+              "name": "form_submission[custom_3]",
+              "value": "={{ $json.body.record.report_text }}"
+            },
+            {
+              "name": "form_submission[custom_4]",
+              "value": "={{ $json.body.record.grade }}"
+            },
+            {
+              "name": "form_submission[custom_5]",
+              "value": "={{ $json.body.record.result_category }}"
             }
           ]
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ {\n  data: {\n    type: \"form_submissions\",\n    attributes: {\n      name: $node[\"Supabase Insert Webhook\"].json.body.record.name,\n      email: $node[\"Supabase Insert Webhook\"].json.body.record.email,\n      custom_1: $node[\"Supabase Insert Webhook\"].json.body.record.report_text,\n      custom_2: $node[\"Supabase Insert Webhook\"].json.body.record.grade,\n      custom_3: $node[\"Supabase Insert Webhook\"].json.body.record.result_category\n    }\n  }\n} }}",
-        "options": {}
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
+        }
       }
     }
   ],
   "connections": {
     "Supabase Insert Webhook": {
-      "main": [
-        [
-          {
-            "node": "Get Kajabi Access Token",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Kajabi Access Token": {
       "main": [
         [
           {
