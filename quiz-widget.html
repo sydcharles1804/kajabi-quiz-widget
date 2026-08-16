@@ -1350,8 +1350,7 @@ function buildReportText(result) {
   if (result.introBullets.length) col.push(bullets(result.introBullets));
 
   // ── Next steps — numbered, each in its own row ──
-  col.push(`<div style="height:8px;line-height:8px;font-size:0;">&nbsp;</div>`);
-  col.push(eyebrow('Your next steps'));
+  col.push(`<h2 style="margin:24px 0 16px;font-family:${FONT};font-size:22px;line-height:1.3;font-weight:bold;color:${ink};">What To Do Now</h2>`);
   col.push(`<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">`
     + result.nextSteps.map((step, i) =>
         `<tr>`
