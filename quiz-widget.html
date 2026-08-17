@@ -275,6 +275,40 @@
       cursor: not-allowed;
     }
 
+    /* ── Question nav row — Back (secondary) + Continue (primary) ── */
+    .q-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .q-actions .btn-primary { flex: 1; }
+
+    .btn-secondary {
+      flex: 0 0 auto;
+      padding: 15px 20px;
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      cursor: pointer;
+      transition: background-color 0.2s var(--ease),
+                  border-color 0.2s var(--ease),
+                  color 0.2s var(--ease);
+    }
+
+    .btn-secondary:hover {
+      background: var(--tint);
+      border-color: var(--mist);
+      color: var(--ink);
+    }
+
+    .btn-secondary:active { transform: translateY(1px); }
+
     /* ── Result — dark band, echoing the site's section bands ──────
        The navy background fills the full width; .band-row is the
        centered, width-capped content that sits on top of it. ────── */
@@ -448,9 +482,14 @@
 
       <div class="options" id="q-options" role="radiogroup" aria-labelledby="q-text"></div>
 
-      <button class="btn-primary" id="btn-next" disabled onclick="nextQuestion()">
-        Continue
-      </button>
+      <div class="q-actions">
+        <button class="btn-secondary hidden" id="btn-back" onclick="prevQuestion()">
+          Back
+        </button>
+        <button class="btn-primary" id="btn-next" disabled onclick="nextQuestion()">
+          Continue
+        </button>
+      </div>
     </div>
   </main>
 
@@ -1174,7 +1213,15 @@ function renderQuestion() {
   const isLast = currentIndex === QUESTIONS.length - 1;
   const btn    = document.getElementById('btn-next');
   btn.textContent = isLast ? 'See My Results' : 'Continue';
-  btn.disabled    = true;
+
+  // Back button — hidden on the first question, since there is nowhere to go
+  document.getElementById('btn-back').classList.toggle('hidden', currentIndex === 0);
+
+  // Revisiting an already-answered question restores that answer rather
+  // than treating it as unanswered.
+  const priorAnswer = allAnswers[q.id];
+  selectedValue = priorAnswer !== undefined ? priorAnswer : null;
+  btn.disabled = selectedValue === null;
 
   // Options — real buttons so they are keyboard-operable and focusable,
   // in a radiogroup so screen readers announce them as a single choice
@@ -1185,7 +1232,9 @@ function renderQuestion() {
     btnEl.type = 'button';
     btnEl.className = 'option';
     btnEl.setAttribute('role', 'radio');
-    btnEl.setAttribute('aria-checked', 'false');
+    const isSelected = opt.value === selectedValue;
+    btnEl.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+    if (isSelected) btnEl.classList.add('selected');
     btnEl.style.setProperty('--i', i);
     btnEl.innerHTML = `
       <span class="opt-letter" aria-hidden="true">${letters[i]}</span>
@@ -1201,7 +1250,6 @@ function renderQuestion() {
   void body.offsetHeight; // force reflow
   body.classList.add('anim-in');
 
-  selectedValue = null;
   requestAnimationFrame(sendHeight);
 }
 
@@ -1220,6 +1268,18 @@ function selectOption(el, value) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  Recompute totalScore from allAnswers rather than accumulating it
+//  incrementally, so changing an earlier answer after going back
+//  can never double-count or leave a stale value behind.
+// ═══════════════════════════════════════════════════════════════
+function recalculateScore() {
+  totalScore = QUESTIONS.reduce((sum, q) => {
+    if (!q.scored || allAnswers[q.id] === undefined) return sum;
+    return sum + Number(allAnswers[q.id]);
+  }, 0);
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  Advance to next question
 // ═══════════════════════════════════════════════════════════════
 function nextQuestion() {
@@ -1230,9 +1290,8 @@ function nextQuestion() {
 
   if (q.isGrade) {
     grade = selectedValue;
-  } else if (q.scored) {
-    totalScore += Number(selectedValue);
   }
+  recalculateScore();
 
   currentIndex++;
 
@@ -1241,6 +1300,15 @@ function nextQuestion() {
   } else {
     renderQuestion();
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Return to the previous question, preserving its recorded answer
+// ═══════════════════════════════════════════════════════════════
+function prevQuestion() {
+  if (currentIndex === 0) return;
+  currentIndex--;
+  renderQuestion();
 }
 
 // ═══════════════════════════════════════════════════════════════
