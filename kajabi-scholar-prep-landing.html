@@ -1,0 +1,725 @@
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  Kajabi landing page — SCHOLAR Prep™ (standalone Custom Code version)
+  ═══════════════════════════════════════════════════════════════════
+
+  Paste this entire file into a Kajabi "Custom Code" landing page (or
+  a full-width Custom Code section on a blank landing page). Fully
+  self-contained: inline CSS, a vanilla-JS scroll-parallax + reveal
+  system, no build step, no external JS dependency.
+
+  DESIGN: asymmetric editorial layout — left-aligned hero (not
+  centered), varied type scale for emphasis, three tinted/duotone
+  parallax image moments (hero, founder story, closing), the rest of
+  the page alternates light/dark bands for rhythm. All motion is
+  transform/opacity only and respects prefers-reduced-motion.
+
+  FULL-BLEED: .page-fullbleed is re-parented to a direct child of the
+  page body at runtime (see bottom script) so it always spans the true
+  viewport width regardless of what container it's pasted inside —
+  the CSS-only 100vw/negative-margin trick isn't reliable once a CMS
+  nests this block inside its own container/row/column wrappers.
+
+  IMAGES: served from Capture Greatness' own Kajabi media library via
+  Kajabi's public asset CDN — permanent, unsigned URLs.
+
+  FORM: both "Join SCHOLAR Prep" forms post directly to the native
+  Kajabi Form endpoint for "SCHOLAR Prep Waitlist" (form id
+  2149694531), using the exact field names Kajabi's own embed uses
+  (form_submission[name], form_submission[email]) — the same
+  unauthenticated public form-submission endpoint documented in
+  CLAUDE.md for this project.
+
+  LOGO: text wordmark, not an image — keeps this block small and easy
+  to edit in Kajabi's code editor. Swap for a real image tag once the
+  logo is uploaded to the Media Library.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>SCHOLAR Prep&trade; — Capture Greatness</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Quattrocento+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#2A5265;
+    --navy-deep:#161E2A;
+    --navy-mid:#346982;
+    --teal:#18919F;
+    --teal-deep:#135875;
+    --teal-light:#438FA0;
+    --berry:#9B3157;
+    --berry-deep:#5A1932;
+    --cream:#F0EAD4;
+    --cream-soft:#FBF6EE;
+    --ink:#20303A;
+    --ease:cubic-bezier(0.22,1,0.36,1);
+    --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  .page-fullbleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;}
+  body{
+    margin:0;
+    background:var(--cream-soft);
+    color:var(--ink);
+    font-family:'Quattrocento Sans', system-ui, sans-serif;
+    font-size:18px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{
+    font-family:'PT Serif', Georgia, serif;
+    font-weight:700;
+    line-height:1.08;
+    margin:0 0 22px;
+    color:var(--navy);
+    letter-spacing:-0.01em;
+  }
+  p{margin:0 0 18px;max-width:60ch;}
+  a{color:inherit;}
+  img{max-width:100%;display:block;}
+  strong{font-weight:700;}
+  .em{color:var(--berry);}
+  .em--teal{color:var(--teal);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important;transition-duration:0.01ms !important;}
+  }
+
+  /* fixed film-grain overlay, never on scrolling containers */
+  .grain{
+    position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.035;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap{max-width:1220px;margin:0 auto;padding:0 32px;}
+  .wrap--narrow{max-width:760px;}
+  .wrap--text{max-width:640px;}
+
+  /* ---------- site header (matches capturegreatness.org) ---------- */
+  .nav{position:sticky;top:0;z-index:50;background:#fff;box-shadow:0 1px 0 rgba(22,30,42,.08);}
+  .nav__bar{max-width:1340px;margin:0 auto;padding:18px 40px;display:flex;align-items:center;justify-content:space-between;gap:24px;}
+  .nav__logo-link{display:block;line-height:1;}
+  .nav__logo-img{height:60px;width:auto;display:block;}
+  .nav__links{display:flex;align-items:center;gap:32px;}
+  .nav__link{
+    font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:16px;
+    color:var(--ink);text-decoration:none;transition:color .3s var(--ease);
+  }
+  .nav__link:hover{color:var(--teal);}
+
+  /* ---------- eyebrow label ---------- */
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;margin-bottom:24px;
+  }
+  .eyebrow::before{content:'';display:block;width:28px;height:1px;background:currentColor;opacity:.6;}
+  .eyebrow--dark{color:rgba(255,255,255,.85);}
+  .eyebrow--light{color:var(--teal-deep);}
+  .eyebrow--berry{color:var(--berry);}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;gap:14px;font-family:'Quattrocento Sans',sans-serif;
+    font-weight:700;font-size:16px;padding:17px 12px 17px 32px;border-radius:999px;text-decoration:none;
+    border:none;cursor:pointer;transition:transform .5s var(--ease-spring), box-shadow .4s var(--ease);
+  }
+  .btn:active{transform:scale(.97);}
+  .btn--berry{background:var(--berry);color:#fff;box-shadow:0 14px 32px rgba(155,49,87,.38);}
+  .btn--berry:hover{transform:translateY(-3px);box-shadow:0 20px 38px rgba(155,49,87,.46);}
+  .btn--teal{background:var(--teal);color:#fff;box-shadow:0 14px 32px rgba(24,145,159,.35);}
+  .btn--teal:hover{transform:translateY(-3px);box-shadow:0 20px 38px rgba(24,145,159,.42);}
+  .btn--cream{background:var(--cream-soft);color:var(--navy);box-shadow:0 14px 32px rgba(22,30,42,.18);}
+  .btn--cream:hover{transform:translateY(-3px);}
+  .btn__icon{
+    width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.24);
+    display:flex;align-items:center;justify-content:center;font-size:15px;flex:none;
+    transition:transform .5s var(--ease-spring);
+  }
+  .btn--cream .btn__icon{background:rgba(42,82,101,.12);}
+  .btn:hover .btn__icon{transform:translate(3px,-2px) scale(1.08);}
+
+  /* ---------- reveal-on-scroll ---------- */
+  .reveal{opacity:0;transform:translateY(32px);filter:blur(6px);transition:opacity 1s var(--ease), transform 1s var(--ease), filter 1s var(--ease);}
+  .reveal.is-visible{opacity:1;transform:translateY(0);filter:blur(0);}
+  .reveal--delay-1.is-visible{transition-delay:.1s;}
+  .reveal--delay-2.is-visible{transition-delay:.2s;}
+  .reveal--delay-3.is-visible{transition-delay:.3s;}
+
+  /* ============ PARALLAX / DUOTONE IMAGE SYSTEM ============ */
+  .parallax{position:relative;overflow:hidden;isolation:isolate;}
+  .parallax__frame{position:absolute;inset:-12% 0;overflow:hidden;}
+  .parallax__img{
+    position:absolute;top:0;left:0;width:100%;height:126%;object-fit:cover;
+    filter:grayscale(.5) contrast(1.08) brightness(.88);will-change:transform;
+  }
+  .parallax__wash{position:absolute;inset:0;mix-blend-mode:multiply;}
+  .parallax--navy .parallax__wash{background:linear-gradient(175deg, rgba(22,30,42,.20) 0%, rgba(42,82,101,.34) 45%, rgba(22,30,42,.44) 100%);}
+  .parallax--navy-deep .parallax__wash{background:linear-gradient(175deg, rgba(10,14,20,.48) 0%, rgba(22,30,42,.68) 50%, rgba(10,14,20,.82) 100%);}
+  .parallax--berry .parallax__wash{background:linear-gradient(175deg, rgba(90,25,50,.35) 0%, rgba(155,49,87,.50) 45%, rgba(60,16,33,.66) 100%);}
+  .parallax--berry-deep .parallax__wash{background:linear-gradient(175deg, rgba(90,25,50,.43) 0%, rgba(155,49,87,.61) 45%, rgba(60,16,33,.80) 100%);}
+  .parallax--teal .parallax__wash{background:linear-gradient(175deg, rgba(19,88,117,.40) 0%, rgba(24,145,159,.50) 45%, rgba(15,70,94,.63) 100%);}
+  .parallax--teal-deep .parallax__wash{background:linear-gradient(175deg, rgba(15,70,94,.42) 0%, rgba(19,88,117,.55) 45%, rgba(10,50,68,.66) 100%);}
+  .parallax__content{position:relative;z-index:2;}
+
+  /* ---------- numbered divider row (No Mistake Here) ---------- */
+  .matters-block{background:var(--navy);border-radius:22px;padding:52px 56px 48px;margin:48px auto 0;max-width:920px;box-shadow:0 34px 70px rgba(22,30,42,.28);}
+  .matters-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:0 0 32px;border-top:1px solid rgba(255,255,255,.2);}
+  .matters-item{padding:26px 28px 0 0;border-right:1px solid rgba(255,255,255,.2);}
+  .matters-item:last-child{border-right:none;padding-right:0;}
+  .matters-item:first-child{padding-left:0;}
+  .matters-num{display:block;font-family:'PT Serif',serif;font-weight:700;font-size:2.1rem;color:var(--teal-light);margin-bottom:10px;}
+  .matters-item p{margin:0;color:#fff;font-size:17px;max-width:none;}
+  .matters-closer{color:#fff;max-width:720px;margin:0 auto;text-align:center;font-family:'PT Serif',serif;font-size:clamp(1.35rem,2.6vw,1.8rem);line-height:1.42;}
+
+  /* ---------- watermark type ---------- */
+  .watermark{
+    position:absolute;font-family:'PT Serif',serif;font-weight:700;
+    font-size:clamp(7rem,24vw,20rem);color:rgba(255,255,255,.045);white-space:nowrap;
+    pointer-events:none;letter-spacing:-.02em;line-height:1;z-index:1;user-select:none;
+  }
+
+  /* ============ HERO ============ */
+  .hero{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:120px 0;text-align:center;}
+  .hero .wrap{width:100%;}
+  .hero__eyebrow{margin-bottom:26px;justify-content:center;}
+  .hero__col{max-width:1080px;margin:0 auto;}
+  .hero h1{color:#fff;font-size:clamp(2.2rem,4.6vw,3.4rem);text-wrap:balance;}
+  .hero h2{color:#fff;font-size:clamp(1.5rem,3.2vw,2.2rem);font-weight:400;font-style:italic;margin:0 auto 32px;max-width:36ch;}
+  .hero__hook{color:rgba(255,255,255,.88);font-size:20px;max-width:44ch;margin:0 auto 36px;}
+
+  /* ============ generic section ============ */
+  .section{padding:130px 0;position:relative;}
+  .section--tight{padding:96px 0;}
+  .section--cream{background:var(--cream);}
+  .section--white{background:var(--white,#fff);}
+  .section--navy{background:var(--navy);color:#fff;}
+  .section--navy h2,.section--navy h3,.section--navy h4{color:#fff;}
+  .section--deep-teal{background:var(--teal-deep);color:#fff;}
+  .section--deep-teal h3{color:#fff;}
+  .section--teal{background:var(--teal);color:#fff;}
+  .section--teal h3,.section--teal h4{color:#fff;}
+  .section--berry{background:var(--berry);color:#fff;}
+  .section--berry h3{color:#fff;}
+  .section--navy-deep{background:var(--navy-deep);color:#fff;}
+  .section--navy-deep h3{color:#fff;}
+  .section h3{font-size:clamp(2rem,4vw,3rem);}
+
+  /* ---------- statement / pull-quote ---------- */
+  .statement{
+    font-family:'PT Serif',serif;font-weight:700;line-height:1.14;
+    font-size:clamp(1.9rem,4.6vw,3.4rem);
+  }
+  .statement--center{text-align:center;max-width:920px;margin:0 auto;}
+
+  /* ---------- asymmetric grids ---------- */
+  .grid{display:grid;gap:72px;align-items:center;}
+  .grid--60-40{grid-template-columns:1.5fr 1fr;}
+  .grid--40-60{grid-template-columns:1fr 1.5fr;}
+  .grid--65-35{grid-template-columns:1.85fr 1fr;}
+  .grid--media-first .grid__media{order:-1;}
+
+  .grid__media img{border-radius:6px;box-shadow:0 34px 64px rgba(22,30,42,.3);width:100%;height:540px;object-fit:cover;filter:saturate(.85) contrast(1.04);}
+
+  /* ---------- callout box ---------- */
+  .callout{border-left:4px solid var(--berry);background:rgba(255,255,255,.9);border-radius:4px;padding:28px 30px;box-shadow:0 20px 44px rgba(22,30,42,.1);}
+  .callout--teal{border-left-color:var(--teal);}
+  .callout--on-dark{background:rgba(255,255,255,.08);border-left-color:var(--teal-light);}
+  .callout--on-dark p{color:rgba(255,255,255,.92);}
+  .callout b{color:var(--berry);}
+  .callout--teal b{color:var(--teal-deep);}
+  .callout--on-dark b{color:#fff;letter-spacing:.06em;}
+
+  /* ---------- big stat numeral ---------- */
+  .stat{display:flex;align-items:flex-end;gap:22px;margin-bottom:8px;}
+  .stat__num{font-family:'PT Serif',serif;font-weight:700;font-size:clamp(4.5rem,11vw,8rem);line-height:.8;color:var(--berry);}
+  .section--navy .stat__num,.section--deep-teal .stat__num{color:var(--teal-light);}
+  .stat__label{font-size:13px;text-transform:uppercase;letter-spacing:.16em;font-weight:700;line-height:1.5;padding-bottom:10px;}
+
+  /* ---------- credibility strip ---------- */
+  .credibility{display:flex;flex-wrap:wrap;gap:8px 0;font-size:13px;text-transform:uppercase;letter-spacing:.14em;font-weight:700;color:var(--teal-light);margin:26px 0 30px;}
+  .credibility span{white-space:nowrap;}
+  .credibility span:not(:last-child)::after{content:'\00b7';margin:0 16px;color:rgba(255,255,255,.35);}
+
+  /* ---------- double-bezel cards ---------- */
+  .bezel-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;}
+  .bezel{padding:8px;border-radius:32px;background:rgba(42,82,101,.07);border:1px solid rgba(42,82,101,.09);}
+  .bezel--accent{background:rgba(155,49,87,.06);border-color:rgba(155,49,87,.1);}
+  .bezel__inner{background:#fff;border-radius:26px;padding:42px 34px;height:100%;box-shadow:inset 0 1px 0 rgba(255,255,255,.8), 0 22px 44px rgba(22,30,42,.06);}
+  .bezel__inner h4{font-size:1.3rem;margin-bottom:18px;}
+
+  /* ---------- waitlist form ---------- */
+  .form-card{padding:8px;border-radius:28px;background:rgba(255,255,255,.2);}
+  .form-card--flat{background:rgba(42,82,101,.08);}
+  .form-card__inner{background:#fff;border-radius:22px;padding:38px;box-shadow:0 26px 54px rgba(22,30,42,.22);color:var(--ink);}
+  .form-card__inner h4{color:var(--navy);margin-bottom:8px;font-size:1.35rem;}
+  .form-card__inner p{color:#57626b;font-size:15px;}
+  .field{
+    width:100%;padding:16px 18px;border-radius:12px;border:1.5px solid #E1DCC9;background:var(--cream-soft);
+    font-family:'Quattrocento Sans',sans-serif;font-size:15px;margin-bottom:14px;color:var(--ink);
+    transition:border-color .3s var(--ease), box-shadow .3s var(--ease);
+  }
+  .field:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px rgba(24,145,159,.14);}
+  .form-submit{width:100%;justify-content:center;padding-left:12px;}
+  .disclaimer{font-size:13px;color:#8a8f76;margin-top:16px;text-align:center;}
+
+  /* ---------- footer ---------- */
+  .footer{background:var(--navy-deep);color:rgba(255,255,255,.7);padding:40px 0;font-size:14px;}
+  .footer__bar{display:flex;align-items:center;gap:28px;flex-wrap:wrap;}
+  .footer__logo-panel{display:inline-flex;align-items:center;background:var(--cream-soft);border-radius:10px;padding:10px 18px;flex:none;}
+  .footer__logo-img{height:40px;width:auto;display:block;}
+  .footer__links{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+  .footer__links a{color:rgba(255,255,255,.85);text-decoration:none;}
+  .footer__links a:hover{color:#fff;}
+
+  ul.checklist{list-style:none;padding:0;margin:0 0 20px;}
+  ul.checklist li{position:relative;padding-left:32px;margin-bottom:14px;max-width:56ch;}
+  ul.checklist li::before{content:"\2713";position:absolute;left:0;top:1px;color:var(--teal);font-weight:700;}
+  .section--navy ul.checklist li::before,.section--teal ul.checklist li::before,.section--deep-teal ul.checklist li::before{color:var(--teal-light);}
+
+  /* ---------- icon checklist (offerings list) ---------- */
+  .offer-panel{
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);
+    border-radius:16px;padding:30px 32px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  }
+  ul.icon-checklist{list-style:none;padding:0;margin:0;}
+  ul.icon-checklist li{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;max-width:56ch;}
+  ul.icon-checklist li:last-child{margin-bottom:0;}
+  ul.icon-checklist li svg{flex:none;width:22px;height:22px;margin-top:2px;}
+
+  @media (max-width:900px){
+    .grid--60-40,.grid--40-60,.grid--65-35{grid-template-columns:1fr;gap:40px;}
+    .grid--media-first .grid__media{order:0;}
+    .grid__media img{height:340px;}
+    .bezel-grid{grid-template-columns:1fr;gap:24px;}
+    .matters-block{padding:36px 26px 32px;border-radius:18px;}
+    .matters-grid{grid-template-columns:1fr;border-top:none;}
+    .matters-item{border-right:none;border-top:1px solid rgba(255,255,255,.2);padding:22px 0 0;}
+    .matters-item:first-child{border-top:none;}
+    .section{padding:88px 0;}
+    .hero{padding:120px 0;}
+    .nav__bar{padding:14px 22px;flex-wrap:wrap;gap:14px;}
+    .nav__logo-img{height:44px;}
+    .footer__bar{gap:18px;}
+    .footer__logo-img{height:32px;}
+    .footer__links{gap:14px;}
+    .nav__links{gap:18px;flex-wrap:wrap;}
+    .nav__link{font-size:14px;}
+    .wrap{padding:0 22px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<div class="page-fullbleed" id="scholar-prep-page">
+
+<nav class="nav">
+  <div class="nav__bar">
+    <a class="nav__logo-link" href="https://www.capturegreatness.org/">
+      <img class="nav__logo-img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2159888204/settings_images/fa54718-861-d5d-d254-7480d10e0c6f_Capture-Greatness_Final_Logo_1_300-copy-2-1-2048x1024_1_.png" alt="Capture Greatness" loading="eager">
+    </a>
+    <div class="nav__links">
+      <a class="nav__link" href="https://www.capturegreatness.org/resources">Resources</a>
+      <a class="nav__link" href="https://www.capturegreatness.org/articles">Blog</a>
+      <a class="nav__link" href="https://www.capturegreatness.org/scholars-get-dollars">Scholars Get Dollars</a>
+      <a class="nav__link" href="https://www.capturegreatness.org/contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO — parallax, left-aligned, navy tint ============ -->
+<header class="hero parallax parallax--berry-deep">
+  <div class="parallax__frame">
+    <img class="parallax__img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/2c2b26-2f5e-87e-d65d-adc67f6e2a7d_pexels-joni-musi-391114634-33300263.webp" alt="" loading="eager">
+  </div>
+  <div class="parallax__wash"></div>
+  <div class="parallax__content wrap">
+    <div class="hero__col">
+      <span class="eyebrow eyebrow--dark reveal">SCHOLAR Prep&trade; &middot; Live Virtual Workshops for Parents</span>
+      <h1 class="reveal reveal--delay-1">Worried you make too much to get significant financial aid for college?</h1>
+      <h2 class="reveal reveal--delay-2">I&rsquo;ll show you where <strong>the money really is</strong> for your child.</h2>
+      <p class="hero__hook reveal reveal--delay-2">It&rsquo;s not your income that will determine how much you pay for college &ndash; it&rsquo;s <strong>your strategy</strong>.</p>
+      <div class="reveal reveal--delay-3">
+        <a class="btn btn--berry" href="#waitlist">
+          Join SCHOLAR Prep&trade;
+          <span class="btn__icon">&rarr;</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ WORKED HARD — cream, left, asymmetric column ============ -->
+<section class="section section--cream" style="padding-top:64px;">
+  <div class="wrap">
+    <div class="reveal" style="max-width:760px;margin:0 auto;text-align:center;">
+      <span class="eyebrow eyebrow--light" style="justify-content:center;">No Mistake Here</span>
+      <p class="statement" style="color:var(--navy);font-size:clamp(1.7rem,3.2vw,2.4rem);">You have worked hard, made responsible financial decisions, and created a good life for your family. <strong class="em">None of that was a mistake.</strong></p>
+      <p style="color:var(--navy);margin:0 auto 18px;">But your income does not tell the whole story of what your family will pay for college. Most parents do not understand how many places college money can come from and the true factors that determine a family&rsquo;s price point.</p>
+    </div>
+    <div class="matters-block reveal reveal--delay-1">
+      <div class="matters-grid">
+        <div class="matters-item">
+          <span class="matters-num">01</span>
+          <p>Your child&rsquo;s <strong>SCHOLAR Profile</strong> matters.</p>
+        </div>
+        <div class="matters-item">
+          <span class="matters-num">02</span>
+          <p>Your <strong>college choices</strong> matter.</p>
+        </div>
+        <div class="matters-item">
+          <span class="matters-num">03</span>
+          <p>Your <strong>scholarship strategy</strong> matters.</p>
+        </div>
+      </div>
+      <p class="matters-closer">A lot of parents are raising good students. But <strong>good grades alone do not produce a scholarship strategy.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PULL-QUOTE — teal band, big centered statement ============ -->
+<section class="section section--tight section--teal parallax parallax--teal">
+  <div class="parallax__frame">
+    <img class="parallax__img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/50ba4d-2455-bbe-fed7-e580bb211c_pexels-safari-consoler-3290243-19501566.webp" alt="" loading="lazy">
+  </div>
+  <div class="parallax__wash"></div>
+  <div class="parallax__content wrap">
+    <p class="statement statement--center reveal" style="color:#fff;">You want to raise a <strong>SCHOLAR</strong> &mdash; because <strong>SCHOLARS get dollars for college.</strong></p>
+  </div>
+</section>
+
+<!-- ============ WAITLIST FORM #1 ============ -->
+<section id="waitlist" class="section section--cream">
+  <div class="wrap">
+    <div class="grid grid--60-40">
+      <div class="reveal">
+        <span class="eyebrow eyebrow--light">Join Us</span>
+        <h3 style="color:var(--navy);">That&rsquo;s why I want you to join us in <span class="em">SCHOLAR Prep&trade;</span>.</h3>
+        <p style="color:var(--navy);">SCHOLAR Prep&trade; is a series of live virtual workshops for moms &ndash; and yes, dads we&rsquo;ll let you in too :-) &ndash; who want to provide an excellent education <strong>without exhausting their savings or sacrificing their peace of mind.</strong></p>
+        <p style="color:var(--navy);">Together, we&rsquo;ll explore the full scholarship landscape, identify the opportunities that best fit your child, and begin putting the systems in place to pursue real money for college.</p>
+      </div>
+      <div class="form-card reveal reveal--delay-1">
+        <div class="form-card__inner">
+          <h4>Join SCHOLAR Prep&trade;</h4>
+          <p>Add your name and email to get first access to dates, pricing, and enrollment.</p>
+          <form action="https://www.capturegreatness.org/forms/2149694531/form_submissions" method="post" accept-charset="UTF-8">
+            <input class="field" type="text" name="form_submission[name]" placeholder="Name" required>
+            <input class="field" type="email" name="form_submission[email]" placeholder="Email" required>
+            <button class="btn btn--berry form-submit" type="submit">
+              Join the List
+              <span class="btn__icon">&rarr;</span>
+            </button>
+          </form>
+          <p class="disclaimer">Dates, price, and payment options will be shared with the list first &mdash; no spam, unsubscribe anytime.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ALREADY DONE THE MATH — white, image left, text right ============ -->
+<section class="section section--white">
+  <div class="wrap">
+    <div class="grid grid--40-60 grid--media-first">
+      <div class="grid__media reveal">
+        <img src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/c1e876f-faca-d2a8-7e5b-c44cec4084_pexels-pnw-prod-8276182.webp" alt="" loading="lazy">
+      </div>
+      <div class="reveal reveal--delay-1">
+        <span class="eyebrow eyebrow--light">The Real Question</span>
+        <h3 style="color:var(--navy);">You Have Already Done the Math</h3>
+        <p style="color:var(--navy);">It&rsquo;s true that full-ride scholarships are hard to come by. And even with great grades, your child still might not get enough money from their college to make the cost &ldquo;affordable&rdquo; for your family.</p>
+        <p style="color:var(--navy);">So in the back of your mind, you are already asking yourself if you can work more hours, tap home equity, or touch your retirement to pay the balance. The question is not whether you love your child enough to do it. Of course you do. <strong>The question is what that bill could cost the rest of your life.</strong></p>
+        <p class="statement" style="font-size:clamp(1.3rem,2.4vw,1.7rem);color:var(--navy);margin:28px 0;">Delayed retirement? Years of private student loan repayments? Telling your child you just can&rsquo;t afford their dream school &ndash; after they worked so hard, all these years?</p>
+        <p style="color:var(--navy);"><strong>If you&rsquo;re grappling with these questions, SCHOLAR Prep&trade; was designed for you.</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 14 CATEGORIES REFRAME — cream, big numeral ============ -->
+<section class="section section--cream">
+  <div class="wrap">
+    <div class="grid grid--40-60">
+      <div class="reveal">
+        <div class="stat">
+          <span class="stat__num">14</span>
+          <span class="stat__label" style="color:var(--navy);">Scholarship<br>Categories</span>
+        </div>
+      </div>
+      <div class="reveal reveal--delay-1">
+        <span class="eyebrow eyebrow--light">The Bigger Picture</span>
+        <h3 style="color:var(--navy);">High Income Closes Some Doors. <span class="em">But It Doesn&rsquo;t Lock You Out.</span></h3>
+        <p style="color:var(--navy);">Need-based aid and academic merit are only two parts of the college-money picture. After years of working with families like yours, I&rsquo;ve identified these <strong>14 Scholarship Categories</strong> &mdash; connected to service, activities, special interests, careers, employers, professional associations, civic organizations, colleges, and more. There are opportunities right under your nose that you don&rsquo;t know to ask about.</p>
+        <div class="callout">
+          <p style="margin:0;color:var(--navy);"><b>THE REFRAME:</b> The goal is not to chase every scholarship on the internet. Instead, we&rsquo;ll strengthen your child&rsquo;s SCHOLAR Profile so they can attract opportunities that fit who they are and where they are going.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TURNS WORRY INTO PLAN — parallax, deep teal tint ============ -->
+<section class="section parallax parallax--teal-deep">
+  <div class="parallax__frame">
+    <img class="parallax__img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/8daefc-c6ce-1de-2672-165ff452d3_pexels-silverkblack-36765298.webp" alt="" loading="lazy">
+  </div>
+  <div class="parallax__wash"></div>
+  <div class="parallax__content wrap">
+    <div class="reveal" style="max-width:640px;">
+      <span class="eyebrow eyebrow--dark">How It Works</span>
+      <h3 style="color:#fff;">SCHOLAR Prep&trade; Turns Worry Into a Working Plan</h3>
+      <p style="color:rgba(255,255,255,.9);">This is not a webinar where you take notes, close the laptop, and then feel guilt about making time to get back to it. <strong>SCHOLAR Prep&trade; is a series of facilitated work sessions.</strong></p>
+      <p style="color:rgba(255,255,255,.9);">And you do it beside like-minded moms who are tired of losing sleep over the cost of college. By the end of our time together, you will know where your child stands, which opportunities deserve your family&rsquo;s attention, and what to do next.</p>
+      <p style="color:rgba(255,255,255,.9);"><strong>You&rsquo;ll leave with a plan, precise action steps, and the head start most families do not realize they need.</strong></p>
+    </div>
+    <p class="statement statement--center reveal reveal--delay-2" style="margin-top:88px;letter-spacing:.01em;color:#fff;">
+      I Teach.&nbsp; You Apply.<br>I Guide.&nbsp; You Make Decisions.
+    </p>
+  </div>
+</section>
+
+<!-- ============ LEAVE WITH MORE — white, wide text, image right ============ -->
+<section class="section section--white">
+  <div class="wrap">
+    <div class="grid grid--65-35">
+      <div class="reveal">
+        <span class="eyebrow eyebrow--light">What We&rsquo;ll Do Together</span>
+        <h3 style="color:var(--navy);">You Will Leave With More Than Information</h3>
+        <ul class="checklist" style="color:var(--navy);">
+          <li><strong>Assess</strong> your child&rsquo;s <strong>SCHOLAR Profile&trade;</strong> and identify the areas that need attention before opportunities are missed.</li>
+          <li><strong>Build</strong> a <strong>College and Scholarship Team</strong> of people who can recommend, advise, connect, encourage, and <strong>hold your child accountable.</strong></li>
+          <li><strong>Create</strong> a <strong>repeatable scholarship system</strong> &mdash; with dedicated Scholarship Time, a tracker, and timelines that fit your family&rsquo;s real life.</li>
+          <li><strong>Prioritize</strong> opportunities by fit, proximity, odds, shared materials, and renewable value &mdash; <strong>not simply the largest award or nearest deadline.</strong></li>
+          <li><strong>Uncover</strong> money available through <strong>generous colleges, employers, professional organizations, civic groups</strong>, and other sources you may not know to explore.</li>
+          <li><strong>Help</strong> you support your child&rsquo;s college and scholarship essays <strong>without taking over their voice</strong> or doing the work for them.</li>
+        </ul>
+        <div class="callout callout--teal">
+          <p style="margin:0;color:var(--navy);"><b>YOUR OUTCOME:</b> You leave as a <strong>more informed and strategic guide</strong> for your family&mdash;with <strong>clarity about where college money can come from</strong>, which opportunities deserve your child&rsquo;s effort, and <strong>what each of you needs to do next.</strong></p>
+        </div>
+      </div>
+      <div class="grid__media reveal reveal--delay-1">
+        <img src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/ad87dec-7f15-30-bb-85dee110cf_pexels-uraw-17615677.webp" alt="" loading="lazy">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROGRAM INCLUDES — navy, big numeral ============ -->
+<section class="section section--navy parallax parallax--navy">
+  <div class="parallax__frame">
+    <img class="parallax__img" data-parallax-strength="0.22" style="filter:grayscale(.5) contrast(1.08) brightness(1.12);" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/b12ead-0d26-040f-fb4a-12e0c5c604_pexels-rdne-8279499.webp" alt="" loading="lazy">
+  </div>
+  <div class="parallax__wash"></div>
+  <div class="parallax__content wrap">
+    <div class="grid grid--40-60">
+      <div class="reveal">
+        <div class="stat">
+          <span class="stat__num">60+</span>
+          <span class="stat__label">Resources for<br>Scholarship Success</span>
+        </div>
+      </div>
+      <div class="reveal reveal--delay-1">
+        <span class="eyebrow eyebrow--dark">What&rsquo;s Included</span>
+        <h3>What The Program Includes</h3>
+        <div class="offer-panel">
+        <ul class="icon-checklist">
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span>A full <strong>SCHOLAR Prep&trade; assessment and action plan</strong> for your child.</span></li>
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span>The <strong>SCHOLAR Prep&trade; digital workbooks</strong> (organized in a Google Folder) &mdash; built for decisions and action, not burdensome pre-work.</span></li>
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span>The <strong>SCHOLAR Prep&trade; Scholarship Resource List</strong>, featuring <strong>60+ opportunities</strong> across all 14 Scholarship Categories.</span></li>
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span>A print copy of <em>Scholars Get Dollars</em> &ndash; mailed to you, <strong>the book behind the strategy</strong> we will put into action together.</span></li>
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span><strong>Plug-and-play scripts</strong> for key record and letter of recommendation requests.</span></li>
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span>An <strong>interactive scholarship tracker</strong>.</span></li>
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span>A <strong>scholarship essay storybank guide</strong>.</span></li>
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span>A scholarship search map.</span></li>
+          <li><svg viewBox="0 0 35 35" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="17.5" cy="17.5" r="16.25" stroke="#62C389" stroke-width="2.5"/><path d="M10.2587 18.1034L15.6897 23.5345L24.7414 10.8621" stroke="#62C389" stroke-width="2.5"/></svg><span>College-money research prompts to use with your AI agent of choice.</span></li>
+        </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHO IT'S FOR ============ -->
+<section class="section section--cream">
+  <div class="wrap">
+    <div class="reveal" style="margin-bottom:52px;">
+      <span class="eyebrow eyebrow--light">Is This You?</span>
+    </div>
+    <div class="bezel-grid">
+      <div class="bezel reveal">
+        <div class="bezel__inner">
+          <h4 style="color:var(--teal-deep);">SCHOLAR Prep&trade; Is for the Mom Who&hellip;</h4>
+          <p>Earns too much to count on meaningful need-based aid &mdash; but <strong>not enough to treat six-figure college costs like pocket change.</strong></p>
+          <p>Has a child in high school and wants to prepare <strong>before the pressure of senior-year deadlines takes over.</strong></p>
+          <p>Believes her child has scholarship potential but <strong>does not know all the places to look</strong> for that money.</p>
+          <p style="margin-bottom:0;">Wants to support her child through the process <strong>without becoming the one applying to college all over again.</strong></p>
+        </div>
+      </div>
+      <div class="bezel bezel--accent reveal reveal--delay-1">
+        <div class="bezel__inner">
+          <h4 style="color:var(--berry);">It&rsquo;s Not for the Parent Looking For&hellip;</h4>
+          <p><strong>A guaranteed award, a magic scholarship list,</strong> or permission to do the student&rsquo;s work. No one can promise what a scholarship committee will decide.</p>
+          <p style="margin-bottom:0;"><strong>What we can build is a smarter strategy, better preparation, and a repeatable system for scholarship success.</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOUNDER STORY — solid navy-deep, text left / photo right ============ -->
+<section class="section section--navy-deep" style="overflow:hidden;position:relative;">
+  <span class="watermark" style="top:-4%;right:-2%;">TOO RICH</span>
+  <div class="wrap" style="position:relative;">
+    <div class="grid grid--60-40">
+      <div class="reveal">
+        <span class="eyebrow eyebrow--dark">From Melissa</span>
+        <h3 style="color:#fff;">I Know What It Means to Be &ldquo;Too Rich&rdquo; for Aid</h3>
+        <p style="color:rgba(255,255,255,.9);">I did not qualify for federal or state grants when I went to college either. I learned that scholarship success could not be reduced to finding a few national competitions and hoping for the best. I eventually found the money that fit me, though &ndash; and <strong>went to grad school for FREE.</strong></p>
+        <div class="stat" style="margin:34px 0 4px;">
+          <span class="stat__num">$12M+</span>
+          <span class="stat__label" style="color:rgba(255,255,255,.85);">In scholarships won<br>by our students</span>
+        </div>
+        <p style="color:rgba(255,255,255,.9);">For more than a decade, I have helped students gain admission to colleges including:</p>
+        <p class="credibility">
+          <span>Yale</span><span>UPenn</span><span>Cornell</span><span>Pomona</span><span>Howard</span><span>Morehouse</span><span>Emory</span><span>Bucknell</span>
+        </p>
+        <p style="color:rgba(255,255,255,.9);">My methods have helped a student receive a Morehouse full-ride scholarship plus a $10,000 study-abroad stipend, coming from a multiple six-figure household. I have helped a family (dad an engineer &amp; mom a nurse) secure an additional <strong>$64,000 in aid</strong> by writing a solid financial aid appeal letter. And most of our students attend college for <strong>less than $1,000 out of pocket per year.</strong></p>
+        <p style="color:rgba(255,255,255,.9);">Those results did not come because of their parents&rsquo; income. Or grades alone. They came from understanding the student, the money, the fit, and the strategy.</p>
+        <p style="text-align:right;color:var(--teal-light);margin-top:24px;"><strong>&mdash; Melissa A. Rowe, M.Ed.</strong></p>
+      </div>
+      <div class="grid__media reveal reveal--delay-1">
+        <img src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/d22b6d-a1fe-e3f8-ce34-ab8510ec8d71_Melissa_10.21.2012-12.webp" alt="Melissa A. Rowe" loading="lazy" style="object-position:center 22%;">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DON'T ACCEPT THE BALANCE — parallax, berry tint ============ -->
+<section class="section parallax parallax--berry" style="padding:160px 0;">
+  <div class="parallax__frame">
+    <img class="parallax__img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/5bb4071-e41b-5c30-4544-e326ff0e261c_pexels-godisable-jacob-226636-901962.webp" alt="" loading="lazy">
+  </div>
+  <div class="parallax__wash"></div>
+  <div class="parallax__content wrap wrap--narrow">
+    <div class="reveal" style="text-align:center;">
+      <span class="eyebrow eyebrow--dark" style="justify-content:center;">Before You Decide Anything</span>
+      <h3 style="color:#fff;font-size:clamp(2.2rem,5vw,3.6rem);">Don&rsquo;t Accept the Remaining Balance Yet</h3>
+      <p style="color:rgba(255,255,255,.92);">Your income may affect what your family receives. It does not tell you every place scholarship money can come from. It does not decide which colleges are most generous with aid. And it does not mean your savings have to become the first and only solution.</p>
+      <p class="statement statement--center" style="color:#fff;margin:36px 0;">Leave with a wider view of what is possible &mdash; and a plan your family can actually follow.</p>
+      <p style="color:rgba(255,255,255,.92);"><strong>Your child&rsquo;s future should not come at the expense of your own.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA / WAITLIST FORM #2 ============ -->
+<section class="section section--teal">
+  <div class="wrap">
+    <div class="grid grid--60-40" style="align-items:start;">
+      <div class="reveal">
+        <span class="eyebrow eyebrow--dark">Ready When You Are</span>
+        <h3>Join SCHOLAR Prep&trade;</h3>
+        <p>Live virtual workshops for parents who want <strong>a real scholarship strategy</strong> &mdash; not just good grades and hope.</p>
+      </div>
+      <div class="form-card reveal reveal--delay-1">
+        <div class="form-card__inner">
+          <h4>Join SCHOLAR Prep&trade;</h4>
+          <p>Add your name and email to get first access to dates, pricing, and enrollment.</p>
+          <form action="https://www.capturegreatness.org/forms/2149694531/form_submissions" method="post" accept-charset="UTF-8">
+            <input class="field" type="text" name="form_submission[name]" placeholder="Name" required>
+            <input class="field" type="email" name="form_submission[email]" placeholder="Email" required>
+            <button class="btn btn--berry form-submit" type="submit">
+              Join the List
+              <span class="btn__icon">&rarr;</span>
+            </button>
+          </form>
+          <p class="disclaimer">Dates, price, and payment options will be shared with the list first &mdash; no spam, unsubscribe anytime.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer__bar wrap">
+    <div class="footer__logo-panel">
+      <img class="footer__logo-img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/ad51f3-3580-227-d618-d63afc52b87_Capture_Greatness_Final_Logo_1_72.png" alt="Capture Greatness" loading="lazy">
+    </div>
+    <nav class="footer__links">
+      <a href="https://www.capturegreatness.org">Home</a>
+      <a href="https://www.capturegreatness.org/resources">Resources</a>
+      <a href="https://www.capturegreatness.org/articles">Blog</a>
+      <a href="https://www.capturegreatness.org/scholars-get-dollars">Scholars Get Dollars</a>
+    </nav>
+  </div>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  // Re-parent the whole page to be a direct child of the page body so
+  // the full-bleed CSS is guaranteed correct no matter how deeply a CMS
+  // nests this Custom Code block inside its own container/row/column
+  // wrappers. The leftover wrapper this leaves behind is collapsed below
+  // so it doesn't reserve empty space at the bottom of the page.
+  var page = document.getElementById('scholar-prep-page');
+  if (page && page.parentNode !== document.body) {
+    var originalParent = page.parentElement;
+    document.body.insertBefore(page, document.body.firstChild);
+    if (originalParent && originalParent !== document.body && !originalParent.children.length) {
+      originalParent.style.display = 'none';
+    }
+  }
+
+  // Scroll-reveal
+  var items = document.querySelectorAll('.reveal');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    items.forEach(function (el) { el.classList.add('is-visible'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+    items.forEach(function (el) { io.observe(el); });
+  }
+
+  // Parallax — transform-only, rAF-throttled, skips offscreen work
+  if (!reduceMotion) {
+    var imgs = document.querySelectorAll('.parallax__img');
+    if (imgs.length) {
+      var ticking = false;
+      var update = function () {
+        var vh = window.innerHeight;
+        imgs.forEach(function (img) {
+          var section = img.closest('.parallax');
+          var rect = section.getBoundingClientRect();
+          if (rect.bottom < 0 || rect.top > vh) return;
+          var centerOffset = (rect.top + rect.height / 2) - vh / 2;
+          var strength = Number(img.dataset.parallaxStrength) || 0.14;
+          img.style.transform = 'translate3d(0,' + (centerOffset * -strength) + 'px,0)';
+        });
+        ticking = false;
+      };
+      window.addEventListener('scroll', function () {
+        if (!ticking) { requestAnimationFrame(update); ticking = true; }
+      }, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    }
+  }
+})();
+</script>
+</body>
+</html>
