@@ -94,6 +94,8 @@ Two things worth being clear about:
 
 ## Deploying (Netlify)
 
+**See `DEPLOYING.md` for the step-by-step runbook** — it covers both routes to production (git push for the quiz, clipboard for the Kajabi snippets), verification, and rollback. What follows is the why.
+
 `build.js` + `netlify.toml` handle this: the build assembles `dist/` from the tracked sources and writes `dist/config.js` from the `SUPABASE_URL` and `SUPABASE_KEY` environment variables set in Netlify. Credentials therefore live in Netlify's encrypted env settings and never enter git.
 
 - **Only `index.html`, `quiz-widget.html`, and `fonts/` are published.** `CLAUDE.md`, the report-copy source docs, the n8n workflow, and `Brand Assets/` are deliberately excluded so internal material isn't served publicly. If the widget ever needs a new asset, add it to `FILES`/`DIRS` in `build.js` or it will 404 in production.
