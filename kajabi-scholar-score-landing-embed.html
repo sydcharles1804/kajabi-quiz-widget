@@ -1,0 +1,874 @@
+<!--
+  EMBED VARIANT of kajabi-scholar-score-landing.html — the identical page
+  with the surrounding document wrapper stripped out, along with the title,
+  description and Open Graph meta tags, because Kajabi supplies its own
+  document head and its own page SEO fields. Paste this into a Custom Code
+  block, then set the page title, description and social image in the
+  Kajabi landing-page settings.
+
+  Edit the standalone file and regenerate this one — never edit both by hand.
+-->
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  Kajabi landing page — SCHOLAR Score™ Quiz (standalone Custom Code)
+  ═══════════════════════════════════════════════════════════════════
+
+  Shares the Capture Greatness brand system with
+  kajabi-scholar-prep-landing.html — same palette tokens, the same
+  logo/nav/footer, the same PT Serif + Quattrocento Sans pairing, and
+  the same component vocabulary (tinted parallax bands, a pull-quote
+  statement, a credibility strip, a callout box, a form-card) — but a
+  different composition, not a copy of it. Two earlier passes on this
+  page overcorrected in opposite directions: the first was an
+  asymmetric editorial layout with text and images bleeding off the
+  container edge; the second reacted by centering every single section
+  into a narrow column, which read as thin and empty on a wide page.
+  This version settles in the middle:
+
+    · a full-bleed parallax hero — bright, full colour (not the
+      duotone treatment the other parallax sections use), with the
+      opt-in form as a glass "form-card" sitting on the image and just
+      two lines of copy over it
+    · body sections alternate solid cream/white/teal bands with tinted
+      parallax bands (three of the eight sections use a photo
+      background — the pull-quote moment dropped its photo in favour
+      of oversized type on a solid teal-deep band), rather than one
+      flat colour for the whole page
+    · roughly balanced two-column layouts (text+list, text+image,
+      portrait+text, text+form-card) for half the sections — always
+      inset within the page's padded wrap, never bled to an edge and
+      never so lopsided one side reads as an afterthought
+    · text containers are wide enough to read as a real column, not a
+      hairline down the centre of the page
+    · no fixed navigation rail, no numbered section eyebrows, no
+      horizontal marquee — those were cut on request in an earlier
+      pass and stay cut here
+
+  Paste this entire file into a Kajabi "Custom Code" landing page (or a
+  full-width Custom Code section on a blank landing page). Fully
+  self-contained: inline CSS, vanilla JS, no build step, no external JS
+  dependency. Intended home is the existing draft landing page
+  "SScoreLanding" (/sscorelanding, page 2152204471), which already has
+  the Quiz Access Form attached.
+
+  FONTS: loaded from the Google Fonts CDN rather than local @font-face.
+  This block is pasted into Kajabi and served from their CDN, so it
+  cannot reference font files on a local disk, and the faces have to
+  match the Prep page exactly.
+
+  FORM: both opt-ins post directly to the native Kajabi Form endpoint
+  for "Quiz Access Form" (form id 2149687846) — the SAME form the
+  current /sgd opt-in uses, so its existing "custom thank you page"
+  setting keeps forwarding visitors to /scholar-score-diagnostic, where
+  the quiz is embedded. Field names match Kajabi's own embed
+  (form_submission[name], form_submission[email]).
+
+  NOTE ON THE NAME FIELD: form 2149687846 currently has only an Email
+  field attached; the site-level "Name" field (id 2152129093) exists but
+  is not on the form. The First Name input may therefore not be stored
+  on the Kajabi contact until that field is added to the form in the
+  admin. The quiz still receives the name, because the localStorage
+  capture at the bottom of this file stashes it under the same keys
+  kajabi-thank-you-page-embed.html reads back.
+
+  EMAIL HAND-OFF: Kajabi's redirect drops ?email= in real browsers
+  (diagnosed 2026-08-07 — see CLAUDE.md). The inline capture script at
+  the bottom writes cg_quiz_email / cg_quiz_name / cg_quiz_captured_at
+  to localStorage as the visitor types, which the thank-you page embed
+  falls back to. Both pages are on capturegreatness.org, so same-origin
+  storage applies. Without that script this page would collect emails
+  but the quiz could not deliver a report.
+
+  FULL-BLEED: .page-fullbleed is re-parented to a direct child of the
+  page body at runtime (see bottom script) so it always spans the true
+  viewport width regardless of what container it's pasted inside.
+
+  IMAGES: served from Capture Greatness' own Kajabi media library via
+  Kajabi's public asset CDN — permanent, unsigned URLs. Chosen for
+  what is actually in the frame: a group of five friends at a door
+  for the hero (the parallax system pre-scales its background image
+  roughly 1.5x for scroll headroom, so a single portrait crops into
+  an uncomfortably tight close-up under that much zoom — a group shot
+  holds up far better), a circle of students talking in a brick
+  classroom behind the SCHOLAR acrostic (the seven qualities show up
+  in how a student shows up with others, not just alone), a student
+  caught in a thoughtful moment in the library behind the pull-quote,
+  two students on campus steps with a planner for the "start early"
+  section (planning, not just studying), Melissa's own portrait for
+  the founder band (unchanged — it's her actual photo), and a mother
+  adjusting her daughter's graduation cap behind the closing opt-in —
+  a direct hit for the "for moms" audience.
+
+  A note on permanent URLs, since it tripped up an earlier pass on
+  this file: the Kajabi media API's `image_url` field is always a
+  signed, expiring S3 link, even for an asset that's never been
+  "placed" anywhere (used_count: 0). That is NOT the same as the
+  asset having no permanent URL — every uploaded asset also resolves,
+  unsigned and permanently, at kajabi-storefronts-production
+  .kajabi-cdn.com/kajabi-storefronts-production/<the same file-uploads
+  path and filename from the signed URL>. Confirm with a HEAD request
+  before trusting it, but don't assume "used_count: 0" means only a
+  temporary link exists.
+
+  All photo images on this page are now .webp — every one of them has
+  a matching optimized copy in Brand Assets/Optimized Landing Images/
+  in this repo too (converted there from the untouched originals in
+  Brand Assets/Stock Images/, capped at 2000px on the long edge). The
+  two Capture Greatness logo files stay .png — they're small,
+  transparent brand marks, not photos, so there's nothing to gain by
+  converting them.
+-->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Quattrocento+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#2A5265;
+    --navy-deep:#161E2A;
+    --navy-mid:#346982;
+    --teal:#18919F;
+    --teal-deep:#135875;
+    --teal-light:#438FA0;
+    --berry:#9B3157;
+    --berry-deep:#5A1932;
+    --cream:#F0EAD4;
+    --cream-soft:#FBF6EE;
+    --ink:#20303A;
+    --line:rgba(42,82,101,.20);
+    --line-dark:rgba(255,255,255,.18);
+    --ease:cubic-bezier(0.22,1,0.36,1);
+    --ease-spring:cubic-bezier(0.34,1.56,0.64,1);
+    --z-nav:50;
+    --z-grain:60;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;overflow-x:clip;}
+  .page-fullbleed{width:100vw;position:relative;left:50%;right:50%;margin-left:-50vw;margin-right:-50vw;}
+  body{
+    margin:0;
+    background:var(--cream-soft);
+    color:var(--ink);
+    font-family:'Quattrocento Sans', system-ui, sans-serif;
+    font-size:18px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{
+    font-family:'PT Serif', Georgia, serif;
+    font-weight:700;
+    line-height:1.08;
+    margin:0 0 22px;
+    color:var(--navy);
+    letter-spacing:-0.015em;
+    text-wrap:balance;
+  }
+  p{margin:0 0 18px;max-width:66ch;text-wrap:pretty;}
+  a{color:inherit;}
+  img{max-width:100%;display:block;}
+  strong{font-weight:700;}
+  .em{color:var(--berry);}
+  .num{font-variant-numeric:tabular-nums;}
+
+  :focus-visible{outline:2px solid var(--teal);outline-offset:3px;border-radius:2px;}
+  .on-dark :focus-visible{outline-color:#fff;}
+
+  .skip{
+    position:absolute;left:-9999px;top:0;z-index:100;background:var(--navy);color:#fff;
+    padding:12px 20px;border-radius:0 0 8px 0;font-weight:700;font-size:14px;text-decoration:none;
+  }
+  .skip:focus{left:0;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important;transition-duration:0.01ms !important;}
+    html{scroll-behavior:auto;}
+  }
+
+  /* fixed film-grain overlay, never on scrolling containers */
+  .grain{
+    position:fixed;inset:0;pointer-events:none;z-index:var(--z-grain);opacity:.035;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap{max-width:1280px;margin:0 auto;padding:0 40px;}
+
+  /* ---------- site header (shared with the Prep page) ---------- */
+  .nav{position:sticky;top:0;z-index:var(--z-nav);background:#fff;box-shadow:0 1px 0 rgba(22,30,42,.08);}
+  .nav__bar{max-width:1400px;margin:0 auto;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;gap:24px;}
+  .nav__logo-link{display:block;line-height:1;}
+  .nav__logo-img{height:56px;width:auto;display:block;}
+  .nav__links{display:flex;align-items:center;gap:30px;}
+  .nav__link{
+    font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:15px;
+    color:var(--ink);text-decoration:none;transition:color .3s var(--ease);
+  }
+  .nav__link:hover{color:var(--teal);}
+  .nav__cta{
+    font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:14px;letter-spacing:.04em;
+    color:#fff;background:var(--berry);text-decoration:none;padding:11px 22px;border-radius:999px;
+    transition:transform .4s var(--ease-spring), box-shadow .4s var(--ease);
+    box-shadow:0 8px 20px rgba(155,49,87,.28);white-space:nowrap;
+  }
+  .nav__cta:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(155,49,87,.36);}
+  .nav__cta:active{transform:scale(.97);}
+
+  /* ---------- shared bits ---------- */
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:12px;
+    font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:11px;letter-spacing:.24em;
+    text-transform:uppercase;margin:0 0 22px;color:var(--teal-deep);
+  }
+  .eyebrow::before{content:'';display:block;width:26px;height:1px;background:currentColor;opacity:.55;}
+  .eyebrow--dark{color:rgba(255,255,255,.78);}
+  .eyebrow--berry{color:var(--berry);}
+  .eyebrow--center{justify-content:center;}
+
+  .pill{
+    display:inline-block;border-radius:999px;padding:8px 20px;
+    font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:11px;
+    letter-spacing:.18em;text-transform:uppercase;line-height:1.5;
+    border:1px solid var(--line);color:var(--teal-deep);background:rgba(255,255,255,.5);
+  }
+  .pill--on-dark{border-color:rgba(255,255,255,.4);color:#fff;background:rgba(255,255,255,.1);}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:14px;
+    font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:16px;
+    padding:17px 14px 17px 30px;border-radius:999px;text-decoration:none;
+    border:none;cursor:pointer;transition:transform .5s var(--ease-spring), box-shadow .4s var(--ease);
+  }
+  .btn:active{transform:scale(.975);}
+  .btn--berry{background:var(--berry);color:#fff;box-shadow:0 14px 30px rgba(90,25,50,.30);}
+  .btn--berry:hover{transform:translateY(-3px);box-shadow:0 20px 38px rgba(90,25,50,.38);}
+  .btn__icon{
+    width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.22);
+    display:flex;align-items:center;justify-content:center;font-size:14px;flex:none;
+    transition:transform .5s var(--ease-spring);
+  }
+  .btn:hover .btn__icon{transform:translate(3px,-2px) scale(1.08);}
+
+  /* ---------- entrance animations (a different one per section) ---------- */
+  .rv{opacity:0;transition:opacity .9s var(--ease), transform .9s var(--ease), clip-path 1s var(--ease);}
+  .rv.in{opacity:1;transform:none;}
+  .rv--up{transform:translateY(30px);}
+  .rv--left{transform:translateX(-32px);}
+  .rv--right{transform:translateX(32px);}
+  .rv--scale{transform:scale(.955);}
+  .rv[data-d="1"].in{transition-delay:.09s;}
+  .rv[data-d="2"].in{transition-delay:.18s;}
+  .rv[data-d="3"].in{transition-delay:.27s;}
+  .rv[data-d="4"].in{transition-delay:.36s;}
+  @media (max-width:760px){
+    .rv--left,.rv--right{transform:translateY(24px);}
+  }
+
+  /* ============ PARALLAX / DUOTONE IMAGE SYSTEM (shared w/ Prep) ============ */
+  .parallax{position:relative;overflow:hidden;isolation:isolate;}
+  .parallax__frame{position:absolute;inset:-12% 0;overflow:hidden;}
+  .parallax__img{
+    position:absolute;top:0;left:0;width:100%;height:126%;object-fit:cover;
+    filter:grayscale(.5) contrast(1.08) brightness(.88);will-change:transform;
+  }
+  .parallax__wash{position:absolute;inset:0;mix-blend-mode:multiply;}
+  .parallax--navy-deep .parallax__wash{background:linear-gradient(175deg, rgba(10,14,20,.48) 0%, rgba(22,30,42,.68) 50%, rgba(10,14,20,.82) 100%);}
+  .parallax--teal .parallax__wash{background:linear-gradient(175deg, rgba(19,88,117,.40) 0%, rgba(24,145,159,.50) 45%, rgba(15,70,94,.63) 100%);}
+  .parallax--berry .parallax__wash{background:linear-gradient(175deg, rgba(90,25,50,.35) 0%, rgba(155,49,87,.50) 45%, rgba(60,16,33,.66) 100%);}
+  .parallax__content{position:relative;z-index:2;}
+
+  /* ---------- pull-quote (words only, no photo — scale carries it) ---------- */
+  .quote{max-width:820px;margin:0 auto;text-align:center;position:relative;z-index:2;}
+  .quote__lede{
+    display:block;font-family:'Quattrocento Sans',sans-serif;font-weight:700;
+    font-size:clamp(1rem,1.6vw,1.2rem);letter-spacing:.04em;
+    color:rgba(255,255,255,.68);margin:0 0 14px;
+  }
+  .quote__punch{
+    display:block;font-family:'PT Serif',serif;font-weight:700;line-height:1.12;
+    letter-spacing:-.015em;font-size:clamp(2.3rem,5.6vw,4.3rem);color:#fff;text-wrap:balance;
+  }
+
+  /* ---------- credibility strip ---------- */
+  .credibility{
+    display:flex;flex-wrap:wrap;gap:8px 0;margin:24px 0 0;padding:0;list-style:none;
+    font-size:12px;text-transform:uppercase;letter-spacing:.15em;font-weight:700;color:var(--teal-light);
+  }
+  .credibility li:not(:last-child)::after{content:'\00b7';margin:0 14px;color:rgba(255,255,255,.32);}
+
+  /* ---------- callout box ---------- */
+  .callout{
+    border-left:4px solid var(--teal);background:rgba(255,255,255,.9);border-radius:4px;
+    padding:26px 28px;margin:28px 0 0;box-shadow:0 20px 44px rgba(22,30,42,.08);
+  }
+  .callout p{margin:0;max-width:none;color:var(--navy);}
+  .callout b{color:var(--teal-deep);letter-spacing:.03em;}
+
+  /* ---------- watermark type ---------- */
+  .watermark{
+    position:absolute;font-family:'PT Serif',serif;font-weight:700;
+    font-size:clamp(6rem,20vw,16rem);color:rgba(255,255,255,.045);white-space:nowrap;
+    pointer-events:none;letter-spacing:-.02em;line-height:1;z-index:1;user-select:none;
+  }
+
+  /* ---------- big stat numeral ---------- */
+  .stat{display:flex;align-items:flex-end;gap:18px;margin:26px 0 4px;}
+  .stat__num{font-family:'PT Serif',serif;font-weight:700;font-size:clamp(3.6rem,7vw,5.6rem);line-height:.85;color:var(--berry);}
+  .on-dark .stat__num{color:var(--teal-light);}
+  .stat__label{font-size:12px;text-transform:uppercase;letter-spacing:.15em;font-weight:700;line-height:1.5;padding-bottom:6px;color:inherit;opacity:.8;}
+
+  /* ---------- balanced two-column grid ---------- */
+  .grid{display:grid;gap:clamp(44px,6vw,84px);align-items:center;}
+  .grid--media-first .grid__media{order:-1;}
+  .grid__media img{
+    border-radius:6px;box-shadow:0 34px 64px rgba(22,30,42,.3);
+    width:100%;height:460px;object-fit:cover;filter:saturate(.85) contrast(1.04);
+  }
+
+  /* ---------- opt-in form ---------- */
+  .optin__row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field-label{
+    display:block;font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:10px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--teal-deep);margin:0 0 6px;
+  }
+  .field{
+    width:100%;padding:15px 16px;border-radius:10px;border:1.5px solid var(--line);background:var(--cream-soft);
+    font-family:'Quattrocento Sans',sans-serif;font-size:15px;color:var(--ink);
+    transition:border-color .3s var(--ease), box-shadow .3s var(--ease);
+  }
+  .field:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px rgba(24,145,159,.14);}
+  .form-card .btn{width:100%;margin-top:28px;}
+  /* No hover movement on the submit button — keep the glow, drop the
+     site-wide lift/icon-shift entirely for this one. (Was scoped to a
+     ".optin" wrapper that no longer exists in the markup, so it never
+     actually matched — hence the movement was still visible.) */
+  .form-card .btn:hover{transform:none;}
+  .form-card .btn:hover .btn__icon{transform:none;}
+  .disclaimer{font-size:12.5px;color:#7f857c;margin:14px 0 0;max-width:none;line-height:1.55;}
+
+  .form-card{padding:8px;border-radius:28px;background:rgba(255,255,255,.2);}
+  .form-card__inner{background:#fff;border-radius:22px;padding:36px;box-shadow:0 26px 54px rgba(22,30,42,.24);color:var(--ink);}
+  .form-card__inner h4{color:var(--navy);margin-bottom:8px;font-size:1.3rem;}
+  .form-card__inner p{color:#57626b;font-size:15px;max-width:none;}
+
+  /* ============ generic section ============ */
+  .sec{padding:clamp(80px,9vw,132px) 0;position:relative;}
+  .sec--white{background:#fff;}
+  .sec--cream{background:var(--cream);}
+  .sec--navy-deep{background:var(--navy-deep);color:rgba(255,255,255,.86);}
+  .sec--navy-deep h2{color:#fff;}
+  .sec--teal-deep{background:var(--teal-deep);color:#fff;position:relative;overflow:hidden;}
+  .sec__head{max-width:800px;}
+  .sec__head h2{font-size:clamp(1.9rem,3.6vw,2.85rem);}
+
+  /* ============ HERO — full-bleed parallax, form-card overlay ============ */
+  .hero{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:120px 0;text-align:center;}
+  .hero .wrap{width:100%;}
+  .hero__col{max-width:920px;margin:0 auto;}
+  /* Full colour, brighter: overrides the site-wide grayscale/dark .parallax__img
+     filter and the navy-deep wash — every other parallax section keeps the
+     duotone treatment, only the hero goes bright and full colour. */
+  .hero .parallax__img{filter:saturate(1.08) contrast(1.03) brightness(1.1);}
+  .hero.parallax--navy-deep .parallax__wash{
+    background:linear-gradient(180deg, rgba(10,14,20,.06) 0%, rgba(16,30,42,.16) 55%, rgba(10,14,20,.48) 100%);
+  }
+  .hero__kicker{
+    font-family:'PT Serif',serif;font-weight:400;font-style:italic;
+    font-size:clamp(1.9rem,3.4vw,2.7rem);color:rgba(255,255,255,.94);
+    margin:0 0 8px;line-height:1.16;text-shadow:0 2px 22px rgba(10,14,20,.4);
+  }
+  .hero h1{
+    color:#fff;font-size:clamp(1.9rem,3.4vw,2.7rem);line-height:1.16;
+    text-wrap:balance;margin-bottom:30px;text-shadow:0 2px 22px rgba(10,14,20,.4);
+  }
+  .hero .form-card{max-width:520px;margin:0 auto;text-align:left;}
+
+  /* ============ THE SCORECARD (balanced two-column) ============ */
+  .scorecard{grid-template-columns:1.05fr 1fr;}
+  .lede{
+    font-family:'PT Serif',serif;font-weight:700;font-size:clamp(1.3rem,2.4vw,1.9rem);line-height:1.32;
+    color:var(--navy);max-width:34ch;margin:18px 0 0;letter-spacing:-.01em;
+  }
+  .aside-note{
+    margin:26px 0 0;padding-top:20px;border-top:2px solid var(--teal);
+    font-size:16.5px;color:var(--navy);max-width:44ch;
+  }
+  .idx{list-style:none;margin:0;padding:0;border-top:1px solid var(--line);}
+  .idx li{display:flex;align-items:baseline;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);}
+  .idx__n{
+    font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;
+    color:var(--berry);flex:none;width:20px;
+  }
+  .idx__q{font-family:'PT Serif',serif;font-size:1.05rem;line-height:1.4;color:var(--navy);margin:0;max-width:none;}
+
+  /* ============ THE SCHOLAR SPINE (parallax) ============ */
+  .acrostic{
+    list-style:none;margin:36px 0 0;padding:0;display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line-dark);
+  }
+  .acrostic li{
+    display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;
+    padding:24px 12px 26px;border-right:1px solid var(--line-dark);
+  }
+  .acrostic li:last-child{border-right:none;}
+  .acrostic__l{font-family:'PT Serif',serif;font-weight:700;line-height:.85;font-size:clamp(2.1rem,5vw,4.6rem);color:var(--teal-light);}
+  .acrostic__w{font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:14px;color:#fff;line-height:1.35;}
+  .acrostic__note{display:block;font-weight:400;font-size:12.5px;color:rgba(255,255,255,.62);margin-top:6px;line-height:1.5;}
+
+  /* ============ YOUR RESULT (balanced two-column) ============ */
+  .result-grid{grid-template-columns:1fr 1.12fr;align-items:start;}
+  .results{list-style:none;margin:0;padding:0;border-top:1px solid var(--line);}
+  .results li{padding:24px 0;border-bottom:1px solid var(--line);}
+  .results__k{
+    display:block;font-family:'Quattrocento Sans',sans-serif;font-weight:700;font-size:11px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--teal-deep);margin-bottom:6px;
+  }
+  .results__v{font-family:'PT Serif',serif;font-size:1.2rem;line-height:1.4;color:var(--navy);margin:0;max-width:44ch;}
+
+  /* ============ TIMING (image + callout, balanced) ============ */
+  .timing{grid-template-columns:1fr 1.08fr;}
+
+  /* ============ THE STRATEGIST (portrait + text, balanced) ============ */
+  .bio{grid-template-columns:.95fr 1.05fr;}
+  .bio__portrait{position:relative;}
+  .bio__portrait img{
+    width:100%;height:clamp(360px,38vw,480px);object-fit:cover;object-position:center 20%;
+    border-radius:6px;filter:saturate(.88) contrast(1.04);box-shadow:0 34px 70px rgba(22,30,42,.4);
+  }
+  .bio__stat{
+    position:absolute;right:-20px;bottom:-22px;z-index:2;width:max-content;min-width:180px;
+    background:var(--berry);color:#fff;padding:16px 22px 18px;border-radius:4px;box-shadow:0 22px 46px rgba(90,25,50,.42);
+  }
+  .bio__stat b{display:block;font-family:'PT Serif',serif;font-weight:700;line-height:.9;font-size:clamp(1.9rem,3.4vw,2.6rem);white-space:nowrap;}
+  .bio__stat-label{display:block;font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.82);margin-top:8px;line-height:1.5;}
+  .sig{margin:24px 0 0;font-family:'PT Serif',serif;font-style:italic;font-size:16.5px;color:var(--teal-light);}
+
+  /* ============ CLOSING OPT-IN (parallax, text + form-card) ============ */
+  .closer-grid{grid-template-columns:1.05fr 1fr;align-items:start;}
+
+  /* ---------- footer ---------- */
+  .footer{background:var(--navy-deep);color:rgba(255,255,255,.66);padding:40px 0;font-size:14px;}
+  .footer__bar{display:flex;align-items:center;gap:28px;flex-wrap:wrap;}
+  .footer__logo-panel{display:inline-flex;align-items:center;background:var(--cream-soft);border-radius:10px;padding:10px 18px;flex:none;}
+  .footer__logo-img{height:38px;width:auto;display:block;}
+  .footer__links{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+  .footer__links a{color:rgba(255,255,255,.85);text-decoration:none;transition:color .3s var(--ease);}
+  .footer__links a:hover{color:var(--teal-light);}
+  .footer__fine{margin:20px 0 0;font-size:12.5px;color:rgba(255,255,255,.42);max-width:none;}
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width:1000px){
+    .scorecard,.result-grid,.timing,.bio,.closer-grid{grid-template-columns:1fr;}
+    .grid--media-first .grid__media{order:0;}
+    .grid__media img{height:340px;}
+    .acrostic{grid-template-columns:repeat(4,1fr);}
+    .acrostic li:nth-child(4n){border-right:none;}
+    .acrostic li{border-bottom:1px solid var(--line-dark);}
+    .bio__stat{right:0;bottom:-20px;}
+  }
+  @media (max-width:640px){
+    body{font-size:17px;}
+    .wrap{padding:0 22px;}
+    .hero{padding:64px 0;}
+    .acrostic{grid-template-columns:repeat(2,1fr);}
+    .acrostic li:nth-child(4n){border-right:1px solid var(--line-dark);}
+    .acrostic li:nth-child(2n){border-right:none;}
+    .nav__bar{padding:10px 18px;gap:12px;}
+    .nav__logo-img{height:40px;}
+    .nav__links{gap:0;}
+    .nav__link{display:none;}
+    .nav__cta{font-size:13px;padding:10px 18px;}
+    .optin__row{grid-template-columns:1fr;}
+    .footer__links{gap:14px;}
+  }
+</style>
+
+<a class="skip" href="#main">Skip to content</a>
+<div class="grain"></div>
+
+<div class="page-fullbleed" id="scholar-score-page">
+
+<nav class="nav">
+  <div class="nav__bar">
+    <a class="nav__logo-link" href="https://www.capturegreatness.org/">
+      <img class="nav__logo-img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2159888204/settings_images/fa54718-861-d5d-d254-7480d10e0c6f_Capture-Greatness_Final_Logo_1_300-copy-2-1-2048x1024_1_.png" alt="Capture Greatness" loading="eager">
+    </a>
+    <div class="nav__links">
+      <a class="nav__link" href="https://www.capturegreatness.org/resources">Resources</a>
+      <a class="nav__link" href="https://www.capturegreatness.org/articles">Blog</a>
+      <a class="nav__link" href="https://www.capturegreatness.org/scholars-get-dollars">Scholars Get Dollars</a>
+      <a class="nav__cta" href="#start">Take the quiz</a>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+
+<!-- ============ HERO — parallax, form-card overlay ============ -->
+<header class="hero parallax parallax--navy-deep">
+  <div class="parallax__frame">
+    <img class="parallax__img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/e5651f7-c6a-58d2-1eff-4806c18d48_pexels-jibarofoto-14146220.webp" alt="" loading="eager" style="object-position:center 20%;">
+  </div>
+  <div class="parallax__wash"></div>
+  <div class="parallax__content wrap">
+    <div class="hero__col">
+      <p class="hero__kicker rv rv--up" data-d="1">Your child gets good grades.</p>
+      <h1 class="rv rv--up" data-d="1">But are they truly scholarship-ready?</h1>
+
+      <div class="form-card rv rv--up" data-d="2">
+        <div class="form-card__inner">
+          <h4>Take the SCHOLAR Score&trade; Quiz</h4>
+          <p>Free, and your personalized result lands in your inbox.</p>
+          <form action="https://www.capturegreatness.org/forms/2149687846/form_submissions" method="post" accept-charset="UTF-8">
+            <div class="optin__row">
+              <div>
+                <label class="field-label" for="hero-name">First name</label>
+                <input class="field" id="hero-name" type="text" name="form_submission[name]" placeholder="Your first name" autocomplete="given-name">
+              </div>
+              <div>
+                <label class="field-label" for="hero-email">Email address</label>
+                <input class="field" id="hero-email" type="email" name="form_submission[email]" placeholder="you@example.com" autocomplete="email" required>
+              </div>
+            </div>
+            <button class="btn btn--berry" type="submit">
+              Find my child&rsquo;s SCHOLAR Score&trade;
+              <span class="btn__icon" aria-hidden="true">&rarr;</span>
+            </button>
+            <p class="disclaimer">Your information is safe with us. We won&rsquo;t send spam, and you can unsubscribe at any time.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ THE SCORECARD — white, balanced two-column ============ -->
+<section class="sec sec--white" id="scorecard">
+  <div class="wrap">
+    <div class="grid scorecard">
+      <div class="rv rv--left">
+        <span class="eyebrow">Beyond the GPA</span>
+        <h2 style="font-size:clamp(1.8rem,3.2vw,2.6rem);">Good grades are only the starting point</h2>
+        <p>Your child may be doing well in school, participating in activities, and checking all the boxes.</p>
+        <p class="lede">But scholarship committees are looking <span class="em">beyond the GPA</span>.</p>
+        <p class="aside-note">The <strong>SCHOLAR Score&trade;</strong> shows you how your child measures up &mdash; before senior-year deadlines make every decision feel urgent.</p>
+      </div>
+
+      <div class="rv rv--right" data-d="1">
+        <span class="eyebrow eyebrow--berry">What they are actually asking</span>
+        <ol class="idx">
+          <li><span class="idx__n num">01</span><p class="idx__q">Does this student take initiative?</p></li>
+          <li><span class="idx__n num">02</span><p class="idx__q">Have they made a meaningful contribution?</p></li>
+          <li><span class="idx__n num">03</span><p class="idx__q">Can they demonstrate leadership?</p></li>
+          <li><span class="idx__n num">04</span><p class="idx__q">Have they built relationships with people who can speak to their potential?</p></li>
+          <li><span class="idx__n num">05</span><p class="idx__q">Is there a clear story connecting who they are, what they have done, and where they are going?</p></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THE SCHOLAR SPINE — parallax, navy-deep ============ -->
+<section class="sec sec--navy-deep on-dark parallax parallax--navy-deep" id="framework">
+  <div class="parallax__frame">
+    <img class="parallax__img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/481046b-ff3a-5d42-bad0-b70aa6034e_pexels-cottonbro-7395452.webp" alt="" loading="lazy" style="object-position:center 35%;">
+  </div>
+  <div class="parallax__wash"></div>
+  <div class="parallax__content wrap">
+    <div class="sec__head rv rv--up" style="text-align:center;margin:0 auto;">
+      <span class="eyebrow eyebrow--dark eyebrow--center">The seven qualities</span>
+      <h2>Discover what your child&rsquo;s r&eacute;sum&eacute; cannot tell you</h2>
+      <p style="color:rgba(255,255,255,.82);max-width:60ch;margin:0 auto;">The <strong>SCHOLAR Score&trade;</strong> evaluates the seven qualities within the <strong>Capture Greatness&reg; SCHOLAR Framework</strong>.</p>
+    </div>
+
+    <ul class="acrostic">
+      <li class="rv rv--scale"><span class="acrostic__l">S</span><span class="acrostic__w">Studious</span></li>
+      <li class="rv rv--scale" data-d="1"><span class="acrostic__l">C</span><span class="acrostic__w">Community-Minded</span></li>
+      <li class="rv rv--scale" data-d="2"><span class="acrostic__l">H</span><span class="acrostic__w">Holistically Developed</span></li>
+      <li class="rv rv--scale" data-d="3"><span class="acrostic__l">O</span><span class="acrostic__w">Organized</span></li>
+      <li class="rv rv--scale" data-d="4"><span class="acrostic__l">L</span><span class="acrostic__w">Leader</span></li>
+      <li class="rv rv--scale" data-d="4"><span class="acrostic__l">A</span><span class="acrostic__w">And<span class="acrostic__note">Willing to take initiative and go beyond what is required.</span></span></li>
+      <li class="rv rv--scale" data-d="4"><span class="acrostic__l">R</span><span class="acrostic__w">Relationship Builder</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ PULL-QUOTE — solid teal-deep, words only, no photo ============ -->
+<section class="sec sec--teal-deep" style="padding:clamp(90px,10vw,144px) 0;">
+  <span class="watermark" aria-hidden="true" style="top:-14%;left:50%;transform:translateX(-50%);font-size:clamp(9rem,26vw,22rem);">&ldquo;</span>
+  <div class="wrap">
+    <p class="quote rv rv--up">
+      <span class="quote__lede">The first win is not the scholarship check.</span>
+      <span class="quote__punch">It&rsquo;s finally knowing exactly what to do.</span>
+    </p>
+  </div>
+</section>
+
+<!-- ============ YOUR RESULT — cream, balanced two-column ============ -->
+<section class="sec sec--cream" id="result">
+  <div class="wrap">
+    <div class="grid result-grid">
+      <div class="sec__head rv rv--left">
+        <span class="eyebrow">What comes back</span>
+        <h2>When you complete the quiz, you get a personalized result</h2>
+        <p>One quiz, one result, matched to your child&rsquo;s current grade &mdash; not a generic scholarship checklist.</p>
+      </div>
+      <ul class="results rv rv--right" data-d="1">
+        <li>
+          <span class="results__k">Strengths</span>
+          <p class="results__v">Where your child is <strong>already showing scholarship potential</strong>.</p>
+        </li>
+        <li>
+          <span class="results__k">Gaps</span>
+          <p class="results__v">Which areas <strong>need greater attention</strong>.</p>
+        </li>
+        <li>
+          <span class="results__k">Next step</span>
+          <p class="results__v">What you should <strong>focus on next</strong>, based on your child&rsquo;s current grade and readiness.</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TIMING — white, image + callout, balanced ============ -->
+<section class="sec sec--white" id="timing">
+  <div class="wrap">
+    <div class="grid timing grid--media-first">
+      <div class="grid__media rv rv--scale">
+        <img src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/212dc73-d7f1-cf7d-1d28-b783f2727186_pexels-zen-chung-5538310.webp" alt="Two students sitting together on campus steps, writing in a planner" loading="lazy" style="object-position:center 20%;">
+      </div>
+      <div class="rv rv--right" data-d="1">
+        <span class="eyebrow">Timing is the advantage</span>
+        <h2>Don&rsquo;t wait until senior year to discover what is missing</h2>
+        <p>Scholarship readiness is not built by submitting hundreds of applications at the last minute.</p>
+        <p>It develops through <strong>the choices your child makes, the experiences they pursue, the relationships they build, and the evidence they create over time.</strong></p>
+        <div class="callout">
+          <p><b>START EARLY:</b> the more time you have, the more you can help your child become a stronger candidate &mdash; without piling on random activities or turning childhood into a r&eacute;sum&eacute;-building exercise.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THE STRATEGIST — navy-deep, portrait + text, balanced ============ -->
+<section class="sec sec--navy-deep on-dark" id="melissa" style="overflow:hidden;">
+  <span class="watermark" style="top:-6%;right:-3%;">SCHOLAR</span>
+  <div class="wrap" style="position:relative;">
+    <div class="grid bio">
+      <div class="bio__portrait rv rv--left">
+        <img src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/d22b6d-a1fe-e3f8-ce34-ab8510ec8d71_Melissa_10.21.2012-12.webp" alt="Melissa A. Rowe, founder of Capture Greatness" loading="lazy">
+        <div class="bio__stat">
+          <b>$<span id="statNum" class="num">12</span>M+</b>
+          <span class="bio__stat-label">In scholarships won<br>by our students</span>
+        </div>
+      </div>
+      <div class="rv rv--right" data-d="1">
+        <span class="eyebrow eyebrow--dark">From Melissa</span>
+        <h2 style="color:#fff;">Created by a scholarship strategist with more than a decade of results</h2>
+        <p style="color:rgba(255,255,255,.9);">Hi, I&rsquo;m <strong>Melissa</strong> &mdash; mom, educator, author of <em>Scholars Get Dollars</em>, and founder of Capture Greatness!&reg;</p>
+        <p style="color:rgba(255,255,255,.9);">I have helped students earn more than <strong>$12 million in scholarships</strong>, including <strong>four Gates Millennium Scholarships</strong>, and gain admission to universities including:</p>
+        <ul class="credibility">
+          <li>Yale</li><li>UPenn</li><li>Cornell</li><li>Howard</li><li>Morehouse</li>
+        </ul>
+        <p style="color:rgba(255,255,255,.9);margin-top:22px;">Through that work, I learned that scholarship success is rarely about finding one magical list. It begins with understanding <strong>what makes a student competitive</strong> &mdash; and intentionally developing the qualities that give colleges and scholarship organizations <strong>a reason to invest.</strong></p>
+        <p style="color:rgba(255,255,255,.9);">That is why I created the <strong>SCHOLAR Score&trade;</strong>.</p>
+        <p class="sig">&mdash; Melissa A. Rowe, M.Ed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLOSING OPT-IN — parallax, text + form-card ============ -->
+<section id="start" class="sec parallax parallax--berry" style="padding:clamp(96px,11vw,150px) 0;">
+  <div class="parallax__frame">
+    <img class="parallax__img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/ce0fb1b-5127-84d4-1d03-1611e7454d7_pexels-newmanphotographs-12196205.webp" alt="" loading="lazy" style="object-position:center 35%;">
+  </div>
+  <div class="parallax__wash"></div>
+  <div class="parallax__content wrap">
+    <div class="grid closer-grid">
+      <div class="rv rv--left">
+        <span class="eyebrow eyebrow--dark">Start here</span>
+        <h2 style="color:#fff;">Find out how scholarship-ready your child really is</h2>
+        <p style="color:rgba(255,255,255,.92);">You do not need to guess. And you do not need to wait until senior year to discover that <strong>good grades were never the whole strategy.</strong></p>
+        <p style="color:rgba(255,255,255,.92);">Enter your information to take the free <strong>SCHOLAR Score&trade; Quiz</strong> and discover where your child stands today.</p>
+        <p style="margin-top:22px;"><span class="pill pill--on-dark">For moms of students in grades 7&ndash;11</span></p>
+      </div>
+      <div class="form-card rv rv--right" data-d="1">
+        <div class="form-card__inner">
+          <h4>Take the SCHOLAR Score&trade; Quiz</h4>
+          <p>Free, and your personalized result lands in your inbox.</p>
+          <form action="https://www.capturegreatness.org/forms/2149687846/form_submissions" method="post" accept-charset="UTF-8">
+            <div class="optin__row">
+              <div>
+                <label class="field-label" for="end-name">First name</label>
+                <input class="field" id="end-name" type="text" name="form_submission[name]" placeholder="Your first name" autocomplete="given-name">
+              </div>
+              <div>
+                <label class="field-label" for="end-email">Email address</label>
+                <input class="field" id="end-email" type="email" name="form_submission[email]" placeholder="you@example.com" autocomplete="email" required>
+              </div>
+            </div>
+            <button class="btn btn--berry" type="submit">
+              Show me my child&rsquo;s SCHOLAR Score&trade;
+              <span class="btn__icon" aria-hidden="true">&rarr;</span>
+            </button>
+            <p class="disclaimer">Your information is safe with us. We won&rsquo;t send spam, and you can unsubscribe at any time.</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__bar">
+      <div class="footer__logo-panel">
+        <img class="footer__logo-img" src="https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/sites/2148578019/images/ad51f3-3580-227-d618-d63afc52b87_Capture_Greatness_Final_Logo_1_72.png" alt="Capture Greatness" loading="lazy">
+      </div>
+      <nav class="footer__links" aria-label="Footer">
+        <a href="https://www.capturegreatness.org">Home</a>
+        <a href="https://www.capturegreatness.org/resources">Resources</a>
+        <a href="https://www.capturegreatness.org/articles">Blog</a>
+        <a href="https://www.capturegreatness.org/scholars-get-dollars">Scholars Get Dollars</a>
+        <a href="https://www.capturegreatness.org/contact">Contact</a>
+      </nav>
+    </div>
+    <p class="footer__fine">SCHOLAR Score&trade; and SCHOLAR Prep&trade; are trademarks of Capture Greatness&reg;. Results vary; no scholarship award is guaranteed.</p>
+  </div>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- Full-bleed rescue -------------------------------------------
+  // Re-parent the whole page to be a direct child of the page body so the
+  // full-bleed CSS is correct no matter how deeply a CMS nests this Custom
+  // Code block inside its own container/row/column wrappers. The leftover
+  // wrapper is collapsed so it doesn't reserve empty space at the bottom.
+  var page = document.getElementById('scholar-score-page');
+  if (page && page.parentNode !== document.body) {
+    var originalParent = page.parentElement;
+    document.body.insertBefore(page, document.body.firstChild);
+    if (originalParent && originalParent !== document.body && !originalParent.children.length) {
+      originalParent.style.display = 'none';
+    }
+  }
+
+  // ---- Staggered entrance reveals ----------------------------------
+  var items = document.querySelectorAll('.rv');
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    items.forEach(function (el) { el.classList.add('in'); });
+  } else {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+    items.forEach(function (el) { io.observe(el); });
+  }
+
+  // ---- Parallax — transform-only, rAF-throttled, skips offscreen work ----
+  if (!reduceMotion) {
+    var imgs = document.querySelectorAll('.parallax__img');
+    if (imgs.length) {
+      var ticking = false;
+      var update = function () {
+        var vh = window.innerHeight;
+        imgs.forEach(function (img) {
+          var section = img.closest('.parallax');
+          var rect = section.getBoundingClientRect();
+          if (rect.bottom < 0 || rect.top > vh) return;
+          var centerOffset = (rect.top + rect.height / 2) - vh / 2;
+          img.style.transform = 'translate3d(0,' + (centerOffset * -0.14) + 'px,0)';
+        });
+        ticking = false;
+      };
+      window.addEventListener('scroll', function () {
+        if (!ticking) { requestAnimationFrame(update); ticking = true; }
+      }, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    }
+  }
+
+  // ---- $12M count-up ------------------------------------------------
+  var statNum = document.getElementById('statNum');
+  if (statNum && !reduceMotion && 'IntersectionObserver' in window) {
+    var target = 12;
+    statNum.textContent = '0';
+    var countIO = new IntersectionObserver(function (entries) {
+      if (!entries[0].isIntersecting) return;
+      countIO.disconnect();
+      var start = null;
+      var step = function (ts) {
+        if (start === null) start = ts;
+        var p = Math.min((ts - start) / 1100, 1);
+        statNum.textContent = String(Math.round(target * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }, { threshold: 0.5 });
+    countIO.observe(statNum);
+  }
+
+  // Both opt-in forms rely on native HTML5 validation now (the email
+  // field's `required` + type="email"), rather than a custom inline
+  // message — the browser's own prompt handles it.
+  var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  // ---- Email/name capture for the quiz hand-off ---------------------
+  // Kajabi's post-submit redirect drops ?email= in real browsers (see
+  // CLAUDE.md, diagnosed 2026-08-07), so the quiz can't rely on it. Stash
+  // the values as they're typed; kajabi-thank-you-page-embed.html reads
+  // these exact keys back when ?email= is missing. Captured on input/change
+  // rather than submit, so that if this block ever sits beside a native
+  // Kajabi form (whose submit Kajabi intercepts with Parsley + Turbolinks)
+  // the value is already stored either way.
+  var EMAIL_KEY = 'cg_quiz_email';
+  var NAME_KEY  = 'cg_quiz_name';
+  var TIME_KEY  = 'cg_quiz_captured_at';
+
+  function save(key, value) {
+    if (!value) return;
+    var v = value.trim();
+    if (!v) return;
+    // Don't stash a half-typed address — the quiz would mail the report nowhere.
+    if (key === EMAIL_KEY && !EMAIL_RE.test(v)) return;
+    try {
+      localStorage.setItem(key, v);
+      localStorage.setItem(TIME_KEY, String(Date.now()));
+    } catch (e) {
+      /* private browsing or storage disabled — the opt-in still works, the
+         quiz just won't be able to deliver a report */
+    }
+  }
+
+  function onInput(e) {
+    var el = e.target;
+    if (!el || !el.name) return;
+    if (el.name === 'form_submission[email]') save(EMAIL_KEY, el.value);
+    else if (el.name === 'form_submission[name]') save(NAME_KEY, el.value);
+  }
+
+  document.addEventListener('input',  onInput, true);
+  document.addEventListener('change', onInput, true);
+
+  // Belt and braces: sweep the fields on submit too, in case a password
+  // manager or autofill populated them without firing input events.
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!form || !form.querySelector) return;
+    var email = form.querySelector('input[name="form_submission[email]"]');
+    var name  = form.querySelector('input[name="form_submission[name]"]');
+    if (email) save(EMAIL_KEY, email.value);
+    if (name)  save(NAME_KEY,  name.value);
+  }, true);
+})();
+</script>
